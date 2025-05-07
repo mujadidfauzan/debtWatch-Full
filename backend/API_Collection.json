@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "DebtWatch API Collection",
+    "_postman_id": "debtwatch-api-20250506101609",
+    "description": "Collection untuk menguji endpoint backend DebtWatch",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Fauzan Haris\",\n  \"email\": \"fauzan@mail.com\",\n  \"age\": 24,\n  \"occupation\": \"Freelancer\",\n  \"marital_status\": \"Single\",\n  \"location\": \"Bandung\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2 - Add Income Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/transactions"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 5000000,\n  \"category\": \"gaji\",\n  \"type\": \"income\",\n  \"note\": \"Gaji bulan ini\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3 - Add Expense Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/transactions"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 1500000,\n  \"category\": \"belanja\",\n  \"type\": \"expense\",\n  \"note\": \"Belanja bulanan\"\n}"
+        }
+      }
+    },
+    {
+      "name": "4 - Add Active Loan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/active_loans"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"loan_type\": \"KTA\",\n  \"monthly_payment\": 750000,\n  \"remaining_months\": 8,\n  \"total_loan_amount\": 6000000\n}"
+        }
+      }
+    },
+    {
+      "name": "5 - Update Dependents",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/dependents"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dependents_count\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "6 - Update Credit History",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/credit_history"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"total_loans_taken\": 3,\n  \"missed_payments\": 1,\n  \"has_default_history\": false\n}"
+        }
+      }
+    },
+    {
+      "name": "7 - Get User Profile",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123"
+        }
+      }
+    },
+    {
+      "name": "8 - Get Transactions",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/transactions"
+        }
+      }
+    },
+    {
+      "name": "9 - Get Active Loans",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/active_loans"
+        }
+      }
+    },
+    {
+      "name": "10 - Get Dependents",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/dependents"
+        }
+      }
+    },
+    {
+      "name": "11 - Get Credit History",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/credit_history"
+        }
+      }
+    },
+    {
+      "name": "12 - Get Risk Score Latest",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/users/user_abc123/risk_scores/latest"
+        }
+      }
+    }
+  ]
+}
