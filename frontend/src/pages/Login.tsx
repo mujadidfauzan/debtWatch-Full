@@ -46,7 +46,7 @@ const LoginPage: React.FC = () => {
               id="email" 
               type="email" 
               placeholder="example@example.com" 
-              className="bg-white-600 border-b border-white-400 rounded-none placeholder-gray-300 !placeholder-gray-300 focus:border-white focus:ring-0"  
+              className="bg-white-600 border-b border-white-400 rounded-none text-black placeholder-gray-300 !placeholder-gray-300 focus:border-white focus:ring-0"  
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
               id="password" 
               type="password" 
               placeholder="••••••••" 
-              className="bg-white-600 border-b border-white-400 rounded-none placeholder-gray-300  !placeholder-gray-300 focus:border-white focus:ring-0" 
+              className="bg-white-600 border-b border-white-400 rounded-none text-black placeholder-gray-300  !placeholder-gray-300 focus:border-white focus:ring-0" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
