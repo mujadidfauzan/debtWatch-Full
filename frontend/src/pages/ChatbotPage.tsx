@@ -3,6 +3,7 @@ import ChatBubble from "../components/ChatBubble";
 import ContextMenu from "../components/ContextMenu";
 import ChatHistory from "../components/ChatHistory";
 import EstimateDebtForm from "../components/EstimateDebtForm";
+import NavigationBar from "../components/NavigationBar";
 
 interface ChatMessage {
   id: number;
@@ -72,33 +73,149 @@ const ChatbotPage: React.FC = () => {
     setInput(e.target.value);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (input.trim() === "") return;
-    
+
+    const userInput = input;
     const newUserMessage: ChatMessage = {
       id: Date.now(),
-      text: input,
+      text: userInput,
       isUser: true,
       archived: false,
     };
     
     setMessages(prev => [...prev, newUserMessage]);
-    setInput("");
-  };
+    setInput(""); // Clear input immediately
 
-  const handleEstimateDebt = (amount: number, term: number, interest: number) => {
-    // Calculate monthly payment
-    const monthlyInterest = interest / 100 / 12;
-    const payment = amount * monthlyInterest / (1 - Math.pow(1 + monthlyInterest, -term));
-    
-    const botResponse: ChatMessage = {
-      id: Date.now(),
-      text: `Berdasarkan hutang Rp${amount.toLocaleString()}, periode ${term} bulan, dan bunga ${interest}%:\n\nCicilan bulanan: Rp${payment.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+    const loadingBotMessageId = Date.now() + 1; // Unique ID
+    const loadingBotMessage: ChatMessage = {
+      id: loadingBotMessageId,
+      text: "Thinking...",
       isUser: false,
       archived: false,
     };
+    setMessages(prev => [...prev, loadingBotMessage]);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userInput }),
+      });
+
+      setMessages(prev => prev.filter(msg => msg.id !== loadingBotMessageId)); // Remove loading message
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        console.error("Error from backend:", errorData.error);
+        const errorBotMessage: ChatMessage = {
+          id: Date.now() + 2,
+          text: `Sorry, I encountered an error: ${errorData.error || 'Failed to get response'}`,
+          isUser: false,
+          archived: false,
+        };
+        setMessages(prev => [...prev, errorBotMessage]);
+        return;
+      }
+
+      const data = await response.json();
+      
+      const botResponse: ChatMessage = {
+        id: Date.now() + 3, // Ensure unique ID
+        text: data.reply,
+        isUser: false,
+        archived: false,
+      };
+      
+      setMessages(prev => [...prev, botResponse]);
+
+    } catch (error) {
+      console.error("Failed to send message or fetch response:", error);
+      setMessages(prev => prev.filter(msg => msg.id !== loadingBotMessageId)); // Remove loading message
+      const networkErrorBotMessage: ChatMessage = {
+        id: Date.now() + 4,
+        text: "Sorry, I couldn't connect to the server. Please check your connection or if the backend is running.",
+        isUser: false,
+        archived: false,
+      };
+      setMessages(prev => [...prev, networkErrorBotMessage]);
+    }
+  };
+
+  const handleEstimateDebt = async (amount: number, term: number, interest: number) => {
+    // 1. Calculate monthly payment
+    const monthlyInterest = interest / 100 / 12;
+    const payment = amount * monthlyInterest / (1 - Math.pow(1 + monthlyInterest, -term));
     
-    setMessages(prev => [...prev, botResponse]);
+    const estimationTextForUser = `Berikut hasil estimasi hutang saya: Jumlah Hutang Rp${amount.toLocaleString()}, Jangka Waktu ${term} bulan, Bunga Tahunan ${interest}%. Estimasi cicilan bulanan adalah Rp${payment.toLocaleString(undefined, { maximumFractionDigits: 0 })}. Bagaimana menurutmu?`;
+
+    // 2. Add the estimation as a USER message
+    const userEstimationMessage: ChatMessage = {
+      id: Date.now(),
+      text: estimationTextForUser,
+      isUser: true, // This is the key change
+      archived: false,
+    };
+    setMessages(prev => [...prev, userEstimationMessage]);
+
+    // 3. Send this user message to the AI and get its response
+    const loadingAIMessageId = Date.now() + 1; 
+    const loadingAIMessage: ChatMessage = {
+      id: loadingAIMessageId,
+      text: "Thinking about your estimation...",
+      isUser: false,
+      archived: false,
+    };
+    setMessages(prev => [...prev, loadingAIMessage]);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: estimationTextForUser }), // Send the user's estimation text
+      });
+
+      setMessages(prev => prev.filter(msg => msg.id !== loadingAIMessageId)); 
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        console.error("Error from backend (after debt estimation):", errorData.error);
+        const errorBotMessage: ChatMessage = {
+          id: Date.now() + 2,
+          text: `Sorry, I encountered an error when thinking about your debt: ${errorData.error || 'Failed to get response'}`,
+          isUser: false,
+          archived: false,
+        };
+        setMessages(prev => [...prev, errorBotMessage]);
+        return;
+      }
+
+      const data = await response.json();
+      
+      const aiGeneratedResponse: ChatMessage = {
+        id: Date.now() + 3, 
+        text: data.reply,
+        isUser: false,
+        archived: false,
+      };
+      
+      setMessages(prev => [...prev, aiGeneratedResponse]);
+
+    } catch (error) {
+      console.error("Failed to get AI response for debt estimation:", error);
+      setMessages(prev => prev.filter(msg => msg.id !== loadingAIMessageId)); 
+      const networkErrorBotMessage: ChatMessage = {
+        id: Date.now() + 4,
+        text: "Sorry, I couldn't connect to the server to discuss your debt estimation.",
+        isUser: false,
+        archived: false,
+      };
+      setMessages(prev => [...prev, networkErrorBotMessage]);
+    }
   };
 
   const handleChatSelect = (chatId: string) => {
@@ -156,7 +273,7 @@ const ChatbotPage: React.FC = () => {
         <ChatHistory onChatSelect={handleChatSelect} />
       )}
       
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 relative pb-[72px]">
         {/* Header */}
         <header className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center">
@@ -209,7 +326,7 @@ const ChatbotPage: React.FC = () => {
         </div>
 
         {/* Input area */}
-        <div className="p-3 bg-white">
+        <div className="p-3 bg-white border-t">
           {!showEstimateForm ? (
             <div className="flex items-center bg-white rounded-lg border p-2">
               <input
@@ -251,7 +368,7 @@ const ChatbotPage: React.FC = () => {
                 </button>
                 
                 <button 
-                  className="flex items-center justify-center h-8 px-3 rounded-full border text-app-blue flex-1 mr-2"
+                  className="flex items-center justify-center h-8 px-3 rounded-full border text-app-blue flex-1 mr-2 bg-white"
                   onClick={() => setShowEstimateForm(false)}
                 >
                   <span className="mr-1">$</span>
@@ -268,6 +385,11 @@ const ChatbotPage: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Fixed Navigation Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-20 w-full">
+          <NavigationBar />
         </div>
 
         {/* Context Menu */}

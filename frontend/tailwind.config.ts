@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			backgroundImage: {
+				'chat-gradient': 'linear-gradient(to bottom, #EBF4FF, #FFF9E6)', // Light Blue to Pale Yellow
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

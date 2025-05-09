@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '@/firebase'; // Import auth and db
+import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const AssetPage: React.FC = () => {
   const navigate = useNavigate();
   const [pilihan, setPilihan] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    setError(null); // Clear error on change
 
     if (value === 'Tidak ada') {
       setPilihan((prev) => (prev.includes('Tidak ada') ? [] : ['Tidak ada']));
@@ -18,6 +23,35 @@ const AssetPage: React.FC = () => {
           ? filtered.filter((item) => item !== value)
           : [...filtered, value];
       });
+    }
+  };
+
+  const handleNext = async () => {
+    setError(null);
+    const user = auth.currentUser;
+
+    if (pilihan.length === 0) {
+      setError("Please select at least one asset option.");
+      return;
+    }
+
+    if (user) {
+      setLoading(true);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, { 
+          assets: pilihan // Saving as an array of strings
+        }, { merge: true }); 
+        navigate('/utang'); // Navigate to Utang page
+      } catch (err) {
+        console.error("Error updating user assets:", err);
+        setError("Failed to save assets. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("No user is logged in. Please log in again.");
+      navigate('/login');
     }
   };
 
@@ -77,6 +111,7 @@ const AssetPage: React.FC = () => {
               );
             })}
           </div>
+          {error && <p className="text-sm text-red-300 mt-2">{error}</p>}
         </div>
       </div>
 
@@ -91,10 +126,10 @@ const AssetPage: React.FC = () => {
 
         <Button
           className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 px-6 rounded-xl shadow-lg"
-          onClick={() => navigate('/utang')}
-          disabled={pilihan.length === 0}
+          onClick={handleNext}
+          disabled={pilihan.length === 0 || loading}
         >
-          Lanjut
+          {loading ? 'Saving...' : 'Lanjut'}
         </Button>
       </div>
     </div>

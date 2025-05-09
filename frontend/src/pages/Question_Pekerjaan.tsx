@@ -1,10 +1,43 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '@/firebase'; // Import auth and db
+import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const PekerjaanPage: React.FC = () => {
   const navigate = useNavigate();
   const [pekerjaan, setPekerjaan] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleNext = async () => {
+    setError(null);
+    const user = auth.currentUser;
+
+    if (!pekerjaan.trim()) {
+      setError("Please enter your occupation.");
+      return;
+    }
+
+    if (user) {
+      setLoading(true);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, { 
+          occupation: pekerjaan.trim()
+        }, { merge: true }); 
+        navigate('/asset'); // Navigate to Asset page
+      } catch (err) {
+        console.error("Error updating user occupation:", err);
+        setError("Failed to save occupation. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("No user is logged in. Please log in again.");
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -32,6 +65,7 @@ const PekerjaanPage: React.FC = () => {
             placeholder="Masukkan pekerjaan"
             className="w-full rounded-lg bg-gray-200 text-center py-3 px-4 placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-white"
           />
+          {error && <p className="text-sm text-red-700 mt-2">{error}</p>} {/* Error color adjusted for yellow bg */}
         </div>
 
 {/* Tombol Kembali */}
@@ -48,10 +82,10 @@ const PekerjaanPage: React.FC = () => {
         <div className="fixed bottom-8 right-12">
           <Button
             className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
-            onClick={() => navigate('/asset')}
-            disabled={!pekerjaan} 
+            onClick={handleNext}
+            disabled={!pekerjaan.trim() || loading} 
           >
-            Lanjut
+            {loading ? 'Saving...' : 'Lanjut'}
           </Button>
         </div>
       </div>

@@ -1,14 +1,95 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserProfile from "@/components/UserProfile";
 import TabSelector from "@/components/TabSelector";
 import AmountDisplay from "@/components/AmountDisplay";
-import ActionButton from "@/components/ActionButton";
 import Calculator from "@/components/Calculator";
 import NavigationBar from "@/components/NavigationBar";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { addUserTransaction, getUserProfile } from "../lib/api";
+import { TransactionData } from "../lib/api";
+import { auth } from "@/firebase";
+import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+
+const expenseCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Other'];
+const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<"income" | "expense">("income");
   const [amount, setAmount] = useState<string>("0");
+  const [category, setCategory] = useState('');
+  const [note, setNote] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const currentUser = auth.currentUser;
+  const userId = currentUser?.uid;
+
+  const queryClient = useQueryClient();
+
+  const { data: userProfile } = useQuery({ 
+    queryKey: ['userProfile', userId], 
+    queryFn: () => getUserProfile(userId!), 
+    enabled: !!userId 
+  });
+
+  const mutation = useMutation({
+    mutationFn: (newTransaction: Omit<TransactionData, 'id' | 'created_at'> & { created_at: Date }) => {
+      if (!userId) {
+        toast.error("User not logged in!");
+        throw new Error("User not logged in");
+      }
+      return addUserTransaction(userId, newTransaction);
+    },
+    onSuccess: () => {
+      toast.success("Transaction added successfully!");
+      setAmount('0');
+      setCategory(''); 
+      setNote('');
+      setSelectedDate(new Date());
+      queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
+    },
+    onError: (error: Error) => {
+      console.error("Error adding transaction:", error);
+      toast.error(`Failed to add transaction: ${error.message}`);
+    }
+  });
+
+  const handleAddTransaction = () => {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error("Please enter a valid amount.");
+      return;
+    }
+    if (!category) {
+      toast.error("Please select a category.");
+      return;
+    }
+    if (!selectedDate) {
+      toast.error("Please select a date.");
+      return;
+    }
+    if (!userId) {
+      toast.error("Cannot add transaction: User not logged in.");
+      return;
+    }
+
+    const transactionToAdd = {
+      amount: numericAmount,
+      category: category,
+      note: note.trim(), 
+      type: activeTab,
+      created_at: selectedDate
+    };
+
+    mutation.mutate(transactionToAdd);
+  };
 
   const handleKeyPress = (key: string) => {
     if (key === "C") {
@@ -16,7 +97,7 @@ const Index = () => {
     } else if (key === "⌫") {
       setAmount(prev => prev.length > 1 ? prev.slice(0, -1) : "0");
     } else if (key === "enter") {
-      console.log("Submit amount:", amount);
+      handleAddTransaction(); 
     } else if (["÷", "×", "−", "+"].includes(key)) {
       console.log("Operation:", key);
     } else {
@@ -33,61 +114,82 @@ const Index = () => {
     }
   };
 
+  const currentCategories = activeTab === 'income' ? incomeCategories : expenseCategories;
+
+  const isFormValid = parseFloat(amount) > 0 && !!category && !!selectedDate;
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-app-blue to-blue-600">
       <div className="p-4 flex-1 flex flex-col">
-        {/* Profil User, belum di develop masih dummy */}
         <div className="mb-6">
-          <UserProfile />
+          <UserProfile userName={userProfile?.full_name} />
         </div>
 
-        {/* Tab Selector */}
         <div className="mb-4">
           <TabSelector activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        {/* Amount Display */}
         <div className="mb-4">
           <AmountDisplay amount={amount} />
         </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-2 mb-6">
-          <ActionButton 
-            icon={
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clipRule="evenodd" />
-              </svg>
-            } 
-            label="Pilih Kategori" 
-          />
-          <ActionButton 
-            icon={
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zm6.905 9.97a.75.75 0 00-1.06 0l-3 3a.75.75 0 101.06 1.06l1.72-1.72V18a.75.75 0 001.5 0v-4.19l1.72 1.72a.75.75 0 101.06-1.06l-3-3z" clipRule="evenodd" />
-                <path d="M14.25 5.25a5.23 5.23 0 00-1.279-3.434 9.768 9.768 0 016.963 6.963A5.23 5.23 0 0016.5 7.5h-1.875a.375.375 0 01-.375-.375V5.25z" />
-              </svg>
-            } 
-            label="Tulis Catatan" 
-          />
-          <ActionButton 
-            icon={
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path d="M12.75 12.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM7.5 15.75a.75.75 0 100-1.5.75.75 0 000 1.5zM8.25 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9.75 15.75a.75.75 0 100-1.5.75.75 0 000 1.5zM10.5 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 15.75a.75.75 0 100-1.5.75.75 0 000 1.5zM12.75 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM14.25 15.75a.75.75 0 100-1.5.75.75 0 000 1.5zM15 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM16.5 15.75a.75.75 0 100-1.5.75.75 0 000 1.5zM15 12.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM16.5 13.5a.75.75 0 100-1.5.75.75 0 000 1.5z" />
-                <path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clipRule="evenodd" />
-              </svg>
-            } 
-            label="Hari Ini" 
+        
+        <div className="space-y-3 mb-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-white/20 border-white/50 text-white hover:text-white",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-full bg-white/20 border-white/50 text-white">
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {currentCategories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Input 
+            type="text"
+            placeholder="Write a note... (optional)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="w-full p-2 rounded bg-white/20 text-white placeholder-white/70"
           />
         </div>
+        
+        <Button 
+          onClick={handleAddTransaction}
+          disabled={!isFormValid || mutation.isPending}
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 rounded-lg mb-4 disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Saving...' : 'Save Transaction'}
+        </Button>
 
-        {/* Kalkulator */}
         <div className="mt-auto">
           <Calculator onKeyPress={handleKeyPress} />
         </div>
       </div>
 
-      {/* Navigation bar, sama ini juga masih dummy */}
       <NavigationBar />
     </div>
   );

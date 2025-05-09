@@ -1,11 +1,53 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '@/firebase'; // Import auth and db
+import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const UtangPage: React.FC = () => {
   const navigate = useNavigate();
   const [punyaUtang, setPunyaUtang] = useState<string | null>(null);
   const [jumlahUtang, setJumlahUtang] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleNext = async () => {
+    setError(null);
+    const user = auth.currentUser;
+
+    if (!punyaUtang) {
+      setError("Please select if you have debt or not.");
+      return;
+    }
+    if (punyaUtang === 'Iya' && !jumlahUtang) {
+      setError("Please enter the amount of debt.");
+      return;
+    }
+
+    if (user) {
+      setLoading(true);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const dataToSave: { activeDebt: boolean; debtAmount?: number } = {
+          activeDebt: punyaUtang === 'Iya',
+        };
+        if (punyaUtang === 'Iya') {
+          dataToSave.debtAmount = parseFloat(jumlahUtang) || 0;
+        }
+
+        await setDoc(userDocRef, dataToSave, { merge: true }); 
+        navigate('/load'); // Navigate to Loading page (as per original logic)
+      } catch (err) {
+        console.error("Error updating user debt info:", err);
+        setError("Failed to save debt information. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("No user is logged in. Please log in again.");
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -36,6 +78,7 @@ const UtangPage: React.FC = () => {
                 onClick={() => {
                   setPunyaUtang(option);
                   if (option === 'Tidak') setJumlahUtang('');
+                  setError(null); // Clear error on change
                 }}
                 className={`py-2 px-6 rounded-full border-2 font-semibold transition-all duration-200
                   ${
@@ -51,39 +94,40 @@ const UtangPage: React.FC = () => {
 
           {/* Input jumlah utang jika memilih "Iya" */}
           {punyaUtang === 'Iya' && (
-  <div className="relative mt-4">
-    <span className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 font-semibold">Rp</span>
-    <input
-      type="number"
-      min="0"
-      value={jumlahUtang}
-      onChange={(e) => setJumlahUtang(e.target.value)}
-      placeholder="Masukkan jumlah utang"
-      className="no-spinner w-full rounded-lg bg-white text-center py-3 px-10 placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-white"
-    />
-  </div>
-)}
+            <div className="relative mt-4">
+              <span className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 font-semibold">Rp</span>
+              <input
+                type="number"
+                min="0"
+                value={jumlahUtang}
+                onChange={(e) => setJumlahUtang(e.target.value)}
+                placeholder="Masukkan jumlah utang"
+                className="no-spinner w-full rounded-lg bg-white text-center py-3 px-10 placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-white"
+              />
+            </div>
+          )}
 
+          {error && <p className="text-sm text-red-700 mt-2">{error}</p>} {/* Error color adjusted */}
         </div>
 
         {/* Tombol Kembali */}
-                <div className="fixed bottom-8 left-12">
-                <Button
-          className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl"
-          onClick={() => navigate('/asset')}
-        >
-          Kembali
-        </Button>
+        <div className="fixed bottom-8 left-12">
+          <Button
+            className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl"
+            onClick={() => navigate('/asset')}
+          >
+            Kembali
+          </Button>
         </div>
 
         {/* Tombol lanjut */}
         <div className="fixed bottom-8 right-12">
           <Button
-           className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
-            onClick={() => navigate('/load')}
-            disabled={!punyaUtang || (punyaUtang === 'Iya' && jumlahUtang === '')}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
+            onClick={handleNext} // Changed to handleNext
+            disabled={!punyaUtang || (punyaUtang === 'Iya' && jumlahUtang === '') || loading}
           >
-            Lanjut
+            {loading ? 'Saving...' : 'Lanjut'}
           </Button>
         </div>
       </div>

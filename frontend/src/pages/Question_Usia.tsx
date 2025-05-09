@@ -1,10 +1,49 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '@/firebase'; // Import auth and db
+import { doc, updateDoc, setDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const UsiaPage: React.FC = () => {
   const navigate = useNavigate();
   const [usia, setUsia] = useState('');
+  const [loading, setLoading] = useState(false); // For loading state
+  const [error, setError] = useState<string | null>(null); // For error messages
+
+  const handleNext = async () => {
+    setError(null);
+    const user = auth.currentUser;
+
+    if (!usia) {
+      setError("Please enter your age.");
+      return;
+    }
+
+    if (user) {
+      setLoading(true);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        // Using setDoc with merge:true is safer as it creates the doc if it doesn't exist,
+        // or updates it if it does.
+        await setDoc(userDocRef, { 
+          age: parseInt(usia, 10) // Storing age as a number
+          // Potentially add other fields from your Firestore schema if they are related to age
+          // For example, if your Firestore schema has an 'occupation' field that is asked next,
+          // you might initialize it here as: occupation: "" 
+        }, { merge: true }); 
+        navigate('/jk'); // Navigate to the next question (Jenis Kelamin)
+      } catch (err) {
+        console.error("Error updating user age:", err);
+        setError("Failed to save age. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // This case should ideally not happen if App.tsx correctly protects this route
+      setError("No user is logged in. Please log in again.");
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -33,15 +72,16 @@ const UsiaPage: React.FC = () => {
             placeholder="Masukkan usia"
              className="no-spinner w-full rounded-lg bg-gray-200 text-center py-3 px-4 placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-white"
           />
+          {error && <p className="text-sm text-red-300 mt-2">{error}</p>} {/* Display error */}
         </div>
 
         <div className="fixed bottom-8 right-12">
           <Button
             className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 px-6 rounded-xl shadow-lg"
-            onClick={() => navigate('/jk')}
-            disabled={!usia} 
+            onClick={handleNext}
+            disabled={!usia || loading} 
           >
-            Lanjut
+            {loading ? 'Saving...' : 'Lanjut'}
           </Button>
         </div>
       </div>

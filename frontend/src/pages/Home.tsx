@@ -6,19 +6,32 @@ import UserProfile from "../components/UserProfile";
 import NavigationBar from "../components/NavigationBar";
 import { useQuery } from "@tanstack/react-query";
 import { getUserProfile, getUserTransactions } from "../lib/api";
+import { auth } from "@/firebase"; // Import auth
 
-const USER_ID = "user123"; 
+// Remove the hardcoded USER_ID
+// const USER_ID = "user123"; 
+
 export default function Dashboard() {
+  // Get the current user from Firebase Auth
+  const currentUser = auth.currentUser;
+  const userId = currentUser?.uid; // Get the UID
+
   const { data: userProfile, isLoading: isLoadingProfile, isError: isErrorProfile, error: errorProfile } = useQuery({
-    queryKey: ['userProfile', USER_ID],
-    queryFn: () => getUserProfile(USER_ID),
-    enabled: !!USER_ID,
+    // Use the dynamic userId in the queryKey
+    queryKey: ['userProfile', userId],
+    // Pass the dynamic userId to the query function
+    queryFn: () => getUserProfile(userId!),
+    // Only enable the query if userId is available
+    enabled: !!userId,
   });
 
   const { data: transactions, isLoading: isLoadingTransactions, isError: isErrorTransactions, error: errorTransactions } = useQuery({
-    queryKey: ['transactions', USER_ID],
-    queryFn: () => getUserTransactions(USER_ID),
-    enabled: !!USER_ID,
+    // Use the dynamic userId in the queryKey
+    queryKey: ['transactions', userId],
+    // Pass the dynamic userId to the query function
+    queryFn: () => getUserTransactions(userId!),
+    // Only enable the query if userId is available
+    enabled: !!userId,
   });
 
   const income = transactions?.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0) || 0;
@@ -26,10 +39,19 @@ export default function Dashboard() {
   const balance = income - expenses;
   const progressPercentage = income > 0 ? (expenses / income) * 100 : 0;
 
-  if (isLoadingProfile || isLoadingTransactions) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  // Combined loading state check
+  if ((isLoadingProfile || isLoadingTransactions) && userId) {
+    return <div className="flex justify-center items-center min-h-screen">Loading user data...</div>;
   }
 
+  // Handle case where user is not logged in (userId is null/undefined)
+  // This case should technically be handled by the routing in App.tsx, but adding a check here is safe.
+  if (!userId) {
+     return <div className="flex justify-center items-center min-h-screen">User not logged in.</div>;
+     // Or ideally, redirect to login, though App.tsx should handle this.
+  }
+
+  // Handle errors after userId is confirmed
   if (isErrorProfile) {
     return <div className="flex justify-center items-center min-h-screen">Error loading profile: {errorProfile instanceof Error ? errorProfile.message : 'Unknown error'}</div>;
   }
