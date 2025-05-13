@@ -7,6 +7,8 @@ import NavigationBar from '../components/NavigationBar';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, getUserTransactions } from '../lib/api';
 import { auth } from '@/firebase'; // Import auth
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Remove the hardcoded USER_ID
 // const USER_ID = "user123";
@@ -15,6 +17,8 @@ export default function Dashboard() {
   // Get the current user from Firebase Auth
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid; // Get the UID
+
+  const navigate = useNavigate();
 
   const {
     data: userProfile,
@@ -63,8 +67,11 @@ export default function Dashboard() {
 
   // Handle errors after userId is confirmed
   if (isErrorProfile) {
+    auth.signOut();
+    navigate('/login');
     return <div className="flex justify-center items-center min-h-screen">Error loading profile: {errorProfile instanceof Error ? errorProfile.message : 'Unknown error'}</div>;
   }
+
   if (isErrorTransactions) {
     return <div className="flex justify-center items-center min-h-screen">Error loading transactions: {errorTransactions instanceof Error ? errorTransactions.message : 'Unknown error'}</div>;
   }
