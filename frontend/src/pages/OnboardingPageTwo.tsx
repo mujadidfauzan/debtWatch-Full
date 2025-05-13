@@ -20,20 +20,8 @@ const OnboardingPageTwo: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#2a43d2] text-white p-8 relative justify-between">
-      {/* Top Navigation/Status Bar area (visual only for now) */}
-      <div className="flex justify-between items-center mb-10">
-        <span className="text-sm font-medium">9:41</span>
-        <div className="flex items-center space-x-1">
-          {/* Wifi and Battery icons - visual placeholders */}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-reception-4" viewBox="0 0 16 16">
-            <path d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v-4a.5.5 0 0 1-.5-.5h-2a.5.5 0 0 1-.5.5zm4-6a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-4a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z"/>
-          </svg>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-battery-full" viewBox="0 0 16 16">
-            <path d="M2 6h10v4H2z"/>
-            <path d="M2 4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm10 1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM14.5 6.5a.5.5 0 0 0-.5-.5v-1a.5.5 0 0 0-1 0v1h-.5a.5.5 0 0 0 0 1h.5v1a.5.5 0 0 0 1 0v-1h.5a.5.5 0 0 0 0-1z"/>
-          </svg>
-        </div>
-      </div>
+        {/* Top Navigation/Status Bar area (visual only for now) */}
+      
       
       {/* Main Content */}
       <div className="flex flex-col items-center text-center flex-grow justify-center">

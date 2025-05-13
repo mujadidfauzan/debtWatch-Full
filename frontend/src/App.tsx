@@ -21,6 +21,7 @@ import LoadingPage from "./pages/Loading";
 import HomePage from "./pages/Home";
 import DetailPage from "./pages/DetailPage";
 import ChatbotPage from "./pages/ChatbotPage";
+import FinancialOverviewPage from "./pages/FinancialOverviewPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OnboardingPage from "./pages/OnboardingPage";
 import OnboardingPageTwo from "./pages/OnboardingPageTwo";
@@ -86,6 +87,7 @@ const App = () => {
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/detail" element={<DetailPage />} />
                 <Route path="/chatbot" element={<ChatbotPage />} />
+                <Route path="/overview" element={<FinancialOverviewPage />} />
               </Route>
 
               <Route path="/load" element={<LoadingPage />} />
