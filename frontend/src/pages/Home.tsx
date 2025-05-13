@@ -8,17 +8,17 @@ import NavigationBar from '../components/NavigationBar';
 import AddDebtDialog from '../components/AddDebtDialog';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, getUserTransactions } from '../lib/api';
-import { auth } from '@/firebase'; // Import auth
+import { auth, db } from '@/firebase'; // Import auth
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 // Define the structure of a debt item
 interface DebtItem {
   id: string;
   namaUtang: string;
-  totalCicilan: number;
+  cicilanTotalBulan: number; // ✅ SINKRON dengan key Firestore
   cicilanSudahDibayar: number;
-  bunga: number | string; // Can be string from form, convert to number if needed
+  bunga: number | string;
   cicilanPerbulan: number;
-  // tanggalMulaiCicilan: string; // Add if you need to display or use it
 }
 
 // Remove the hardcoded USER_ID
@@ -36,6 +36,33 @@ export default function Dashboard() {
   const [debtToEdit, setDebtToEdit] = useState<DebtItem | null>(null);
   const [isEditDebtDialogOpen, setIsEditDebtDialogOpen] = useState(false);
 
+  useEffect(() => {
+    const fetchDebts = async () => {
+      if (!userId) return;
+
+      try {
+        const loansRef = collection(db, 'users', userId, 'loans');
+        const snapshot = await getDocs(loansRef);
+        const fetchedDebts = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            namaUtang: data.namaUtang || 'Tanpa Nama',
+            cicilanSudahDibayar: data.cicilanSudahDibayar || 0,
+            cicilanTotalBulan: data.cicilanTotalBulan || 0,
+            bunga: data.bunga || 0,
+            cicilanPerbulan: data.cicilanPerbulan || 0,
+          };
+        });
+        setDebts(fetchedDebts);
+      } catch (err) {
+        console.error('Gagal mengambil data utang:', err);
+      }
+    };
+
+    fetchDebts();
+  }, [userId]);
+
   const openAddDebtDialog = () => {
     setDebtToEdit(null); // Ensure we are in "add" mode
     setIsAddDebtDialogOpen(true);
@@ -49,24 +76,72 @@ export default function Dashboard() {
   };
   // We can use closeAddDebtDialog to close the dialog when editing is done or cancelled.
 
-  const handleAddDebt = (newDebtData: Omit<DebtItem, 'id'>) => {
-    setDebts((prevDebts) => [
-      ...prevDebts,
-      { ...newDebtData, id: Date.now().toString() }, // Simple ID generation
-    ]);
-    closeAddDebtDialog(); // Close dialog after adding
+  const handleAddDebt = async (newDebtData: Omit<DebtItem, 'id'>) => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error('User belum login.');
+      return;
+    }
+
+    try {
+      const loansRef = collection(db, 'users', user.uid, 'loans');
+
+      const docRef = await addDoc(loansRef, {
+        ...newDebtData,
+        is_active: newDebtData.cicilanSudahDibayar < newDebtData.cicilanTotalBulan,
+        created_at: new Date().toISOString(),
+      });
+
+      setDebts((prevDebts) => [
+        ...prevDebts,
+        { ...newDebtData, id: docRef.id }, // pakai Firestore ID
+      ]);
+      closeAddDebtDialog();
+    } catch (error) {
+      console.error('Gagal menambahkan utang ke Firestore:', error);
+    }
   };
 
-  const handleEditDebt = (updatedDebt: DebtItem) => {
-    setDebts((prevDebts) => prevDebts.map((debt) => (debt.id === updatedDebt.id ? updatedDebt : debt)));
-    setIsAddDebtDialogOpen(false); // Close the dialog
-    setDebtToEdit(null);
+  const handleEditDebt = async (updatedDebt: DebtItem) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const debtRef = doc(db, 'users', user.uid, 'loans', updatedDebt.id);
+      const is_active = updatedDebt.cicilanSudahDibayar < updatedDebt.cicilanTotalBulan;
+
+      await setDoc(
+        debtRef,
+        {
+          ...updatedDebt,
+          is_active,
+          updated_at: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      setDebts((prevDebts) => prevDebts.map((debt) => (debt.id === updatedDebt.id ? updatedDebt : debt)));
+      setIsAddDebtDialogOpen(false);
+      setDebtToEdit(null);
+    } catch (error) {
+      console.error('Gagal mengedit utang di Firestore:', error);
+    }
   };
 
-  const handleDeleteDebt = (debtId: string) => {
-    setDebts((prevDebts) => prevDebts.filter((debt) => debt.id !== debtId));
-    setIsAddDebtDialogOpen(false); // Close the dialog
-    setDebtToEdit(null); // Clear any debt being edited
+  const handleDeleteDebt = async (debtId: string) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const debtRef = doc(db, 'users', user.uid, 'loans', debtId);
+      await deleteDoc(debtRef);
+
+      setDebts((prevDebts) => prevDebts.filter((debt) => debt.id !== debtId));
+      setIsAddDebtDialogOpen(false);
+      setDebtToEdit(null);
+    } catch (error) {
+      console.error('Gagal menghapus utang di Firestore:', error);
+    }
   };
 
   // Calculate total utang dynamically
@@ -104,6 +179,34 @@ export default function Dashboard() {
   const expenses = transactions?.filter((t) => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0) || 0;
   const balance = income - expenses;
   const progressPercentage = income > 0 ? (expenses / income) * 100 : 0;
+
+  const sisaUtang = debts.reduce((sum, debt) => {
+    const sisaBulan = debt.cicilanTotalBulan - debt.cicilanSudahDibayar;
+    return sum + sisaBulan * debt.cicilanPerbulan;
+  }, 0);
+
+  const [riskLevel, setRiskLevel] = useState<string>('');
+  const [explanation, setExplanation] = useState<string>('');
+
+  // All `useEffect` hooks defined
+  useEffect(() => {
+    const fetchRiskScore = async () => {
+      if (!userId) return;
+      try {
+        const response = await fetch(`http://localhost:8000/users/${userId}/risk_scores/generate`, {
+          method: 'POST',
+        });
+        if (!response.ok) throw new Error('Gagal mengambil data risiko keuangan');
+        const data = await response.json();
+        console.log(data);
+        setRiskLevel(data.risk_level);
+        setExplanation(data.explanation);
+      } catch (error) {
+        console.error('Error fetching risk score:', error);
+      }
+    };
+    fetchRiskScore();
+  }, [userId]);
 
   // Combined loading state check
   if ((isLoadingProfile || isLoadingTransactions) && userId) {
@@ -147,11 +250,12 @@ export default function Dashboard() {
           <div className="flex justify-between items-end mb-4">
             <div>
               <p className="text-xs text-white/90">Status Keuangan</p>
-              <p className="text-3xl font-bold">Resiko Tinggi</p>
+              <p className="text-3xl font-bold">{riskLevel ? `Resiko ${riskLevel}` : 'Calculating...'}</p>
             </div>
+
             <div className="text-right">
               <p className="text-xs text-white/90">Jumlah Utang</p>
-              <p className="text-2xl font-bold">Rp. 2.000.000.000</p>
+              <p className="text-2xl font-bold">Rp. {sisaUtang.toLocaleString('id-ID')}</p>
             </div>
           </div>
 
@@ -191,9 +295,9 @@ export default function Dashboard() {
                     <React.Fragment key={debt.id}>
                       <div className={`p-2.5 ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.namaUtang}</div>
                       <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>
-                        {debt.cicilanSudahDibayar}/{debt.totalCicilan}
+                        {debt.cicilanSudahDibayar}/{debt.cicilanTotalBulan}
                       </div>
-                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{typeof debt.bunga === 'number' ? `${debt.bunga}%` : debt.bunga}</div>
+                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{typeof debt.bunga === 'number' ? `${debt.bunga}%` : `${debt.bunga}%`}</div>
                       <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.cicilanPerbulan.toLocaleString('id-ID')}</div>
                       <div className={`p-2.5 flex items-center justify-center ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>
                         <button onClick={() => openEditDebtDialog(debt)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md">
@@ -239,15 +343,16 @@ export default function Dashboard() {
           <div className="bg-yellow-50 p-3.5 rounded-lg pb-24">
             <div className="flex justify-between items-center bg-yellow-400 p-2.5 rounded-md">
               <p className="font-semibold text-sm text-black">Sisa Uang</p>
-              <p className="font-bold text-sm text-black tabular-nums">Rp. 2.300.000</p>
+              <p className="font-bold text-sm text-black tabular-nums">Rp. {balance.toLocaleString('id-ID')}</p>
             </div>
             <div className="flex justify-between items-center bg-blue-600 text-white p-2.5 rounded-md mt-2.5">
               <p className="font-semibold text-sm">Cicilan Yang Harus Dibayar</p>
-              <p className="font-bold text-sm tabular-nums">Rp. 3.300.000</p>
+              <p className="font-bold text-sm tabular-nums">Rp. {totalUtangPerbulan.toLocaleString('id-ID')}</p>
             </div>
+
             <div className="mt-3.5">
-              <p className="text-sm font-semibold text-gray-800">Satus :</p>
-              <p className="text-sm text-red-600 font-medium mt-1">Berpotensi Gagal Bayar Karena Sisa Uang Kurang Dari Cicilan Yang Harus Dibayar</p>
+              <p className="text-sm font-semibold text-gray-800">Status :</p>
+              <p className="text-sm text-red-600 font-medium mt-1">{explanation || 'Menunggu analisis...'}</p>
             </div>
           </div>
 

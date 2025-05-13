@@ -12,82 +12,102 @@ model = genai.GenerativeModel("gemini-2.0-flash")
 router = APIRouter()
 
 
-@router.get("/users/{user_id}/risk_scores/latest")
+@router.post("/users/{user_id}/risk_scores/generate")
 def generate_risk_score(user_id: str):
-    # 🔹 Ambil data user
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
-    if not user_doc.exists:
-        raise HTTPException(status_code=404, detail="User not found")
-    user_data = user_doc.to_dict()
-
-    # 🔹 Ambil tanggungan
-    dep_doc = user_ref.collection("financial_dependents").document("main").get()
-    dependents = dep_doc.to_dict().get("dependents_count", 0) if dep_doc.exists else 0
-
-    # 🔹 Ambil transaksi
-    transactions = user_ref.collection("transactions").stream()
-    txns = [t.to_dict() for t in transactions]
-
-    # 🔹 Ambil utang aktif
-    loans = user_ref.collection("active_loans").stream()
-    active_loans = [l.to_dict() for l in loans]
-
-    # 🔹 Ambil riwayat kredit
-    credit_doc = user_ref.collection("credit_history").document("main").get()
-    credit_data = credit_doc.to_dict() if credit_doc.exists else {}
-
-    # 🔹 Rangkai data untuk prompt
-    prompt = f"""
-Berikut adalah data pengguna:
-
-- Nama: {user_data.get('full_name', 'Tidak diketahui')}
-- Umur: {user_data.get('age', 'N/A')}
-- Pekerjaan: {user_data.get('occupation', 'N/A')}
-- Tanggungan keluarga: {dependents}
-- Riwayat Kredit: Total Pinjaman = {credit_data.get('total_loans_taken', 0)}, Telat Bayar = {credit_data.get('missed_payments', 0)}, Pernah Gagal Bayar = {"Ya" if credit_data.get('has_default_history') else "Tidak"}
-
-Transaksi:
-{chr(10).join([f"- {t.get('type')} Rp{t.get('amount')} kategori {t.get('category')}" for t in txns]) or "Tidak ada transaksi"}
-
-Utang Aktif:
-{chr(10).join([f"- {l['loan_type']} sisa {l['remaining_months']} bulan, cicilan Rp{l['monthly_payment']}" for l in active_loans]) or "Tidak ada"}
-
-Tolong analisis risiko keuangan pengguna ini berdasarkan data di atas. 
-Berikan hasil akhir dengan memilih salah satu dari:
-- High Risk
-- Medium Risk
-- Low Risk
-
-Tambahkan penjelasan singkat setelahnya.
-"""
-
     try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
+        user_ref = db.collection("users").document(user_id)
 
-        # Ekstrak kategori
-        if "High Risk" in text:
-            label = "High Risk"
-        elif "Medium Risk" in text:
-            label = "Medium Risk"
-        elif "Low Risk" in text:
-            label = "Low Risk"
+        # Ambil data user profile
+        user_data = user_ref.get().to_dict()
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        income = user_data.get("monthly_income", 0)
+        dependents = (
+            user_ref.collection("financial_dependents").document("main").get().to_dict()
+            or {}
+        )
+        loans = list(user_ref.collection("loans").stream())
+        credit = (
+            user_ref.collection("credit_history").document("main").get().to_dict() or {}
+        )
+
+        # Ambil total pengeluaran
+        transactions = list(user_ref.collection("transactions").stream())
+        total_expenses = sum(
+            t.get("amount", 0)
+            for t in (tr.to_dict() for tr in transactions)
+            if t.get("type") == "expense"
+        )
+
+        total_cicilan_perbulan = sum(
+            (doc.to_dict().get("cicilanPerbulan", 0) for doc in loans)
+        )
+        total_utang = sum(
+            doc.to_dict().get("cicilanPerbulan", 0)
+            * (
+                doc.to_dict().get("cicilanTotalBulan", 0)
+                - doc.to_dict().get("cicilanSudahDibayar", 0)
+            )
+            for doc in loans
+        )
+
+        # Prompt AI
+        prompt = f"""
+        Profil Pengguna:
+        - Penghasilan: Rp{income}
+        - Pengeluaran: Rp{total_expenses}
+        - Jumlah tanggungan: {dependents.get("dependents_count", 0)}
+        - Total cicilan per bulan: Rp{total_cicilan_perbulan}
+        - Total utang tersisa: Rp{total_utang}
+
+        Tugas Anda adalah mengkategorikan tingkat risiko finansial pengguna ini sebagai salah satu dari:
+        - Rendah
+        - Sedang
+        - Tinggi
+
+        Lalu berikan penjelasan singkat 1-2 kalimat mengapa.
+        Format jawaban: <Risiko>: <Penjelasan>
+        Contoh: Tinggi: Pengeluaran bulanan melebihi penghasilan bulanan.
+        """
+
+        ai_response = model.generate_content(prompt)
+        reply = ai_response.text.strip()
+
+        # Default fallback values
+        risk_level = "Unknown"
+        explanation = reply
+
+        # Try to parse "<Risiko>: <Penjelasan>"
+        if ":" in reply:
+            level_part, explanation_part = reply.split(":", 1)
+            explanation = explanation_part.strip()
+
+            level_lower = level_part.strip().lower()
+            if level_lower.startswith("tinggi"):
+                risk_level = "High"
+            elif level_lower.startswith("sedang"):
+                risk_level = "Medium"
+            elif level_lower.startswith("rendah"):
+                risk_level = "Low"
         else:
-            label = "Unknown"
+            # If no colon found, assume the whole reply is just explanation
+            explanation = reply
 
         # Simpan ke Firestore
-        doc_ref = user_ref.collection("risk_scores").document()
-        doc_ref.set(
+        ref = user_ref.collection("risk_scores").document()
+        ref.set(
             {
-                "score": label,
+                "score": risk_level,
                 "generated_by_ai": True,
-                "raw_output": text,
+                "explanation": reply,
                 "last_calculated": datetime.utcnow(),
             }
         )
 
-        return {"score": label, "raw": text}
+        return {"risk_level": risk_level, "explanation": explanation}
 
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate risk score: {str(e)}"
+        )
