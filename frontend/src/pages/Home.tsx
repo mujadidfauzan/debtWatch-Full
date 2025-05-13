@@ -145,7 +145,7 @@ export default function Dashboard() {
           {/* Status Keuangan & Jumlah Utang */}
           <div className="flex justify-between items-end mb-4">
             <div>
-              <p className="text-xs text-white/90">Status Keuangan</p>
+              <p className="text-xs text-white/90">Status Keuanganddd</p>
               <p className="text-3xl font-bold">Resiko Tinggi</p>
             </div>
             <div className="text-right">
