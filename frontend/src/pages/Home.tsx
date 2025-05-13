@@ -1,20 +1,78 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SummaryCard from '../components/SummaryCard';
 import Tabs from '../components/Tabs';
 import TransactionItem from '../components/TransactionItem';
 import UserProfile from '../components/UserProfile';
 import NavigationBar from '../components/NavigationBar';
+import AddDebtDialog from '../components/AddDebtDialog';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, getUserTransactions } from '../lib/api';
 import { auth } from '@/firebase'; // Import auth
+
+// Define the structure of a debt item
+interface DebtItem {
+  id: string;
+  namaUtang: string;
+  totalCicilan: number;
+  cicilanSudahDibayar: number;
+  bunga: number | string; // Can be string from form, convert to number if needed
+  cicilanPerbulan: number;
+  // tanggalMulaiCicilan: string; // Add if you need to display or use it
+}
 
 // Remove the hardcoded USER_ID
 // const USER_ID = "user123";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   // Get the current user from Firebase Auth
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid; // Get the UID
+
+  const [isAddDebtDialogOpen, setIsAddDebtDialogOpen] = useState(false);
+  const [debts, setDebts] = useState<DebtItem[]>([]); // Initialized as an empty array
+  const [debtToEdit, setDebtToEdit] = useState<DebtItem | null>(null);
+  const [isEditDebtDialogOpen, setIsEditDebtDialogOpen] = useState(false);
+
+  const openAddDebtDialog = () => {
+    setDebtToEdit(null); // Ensure we are in "add" mode
+    setIsAddDebtDialogOpen(true);
+  };
+  const closeAddDebtDialog = () => setIsAddDebtDialogOpen(false);
+
+  const openEditDebtDialog = (debt: DebtItem) => {
+    setDebtToEdit(debt);
+    setIsAddDebtDialogOpen(true); // Reuse the same dialog state for now
+                               // Consider a separate state if dialog content differs significantly for edit
+  };
+  // We can use closeAddDebtDialog to close the dialog when editing is done or cancelled.
+
+  const handleAddDebt = (newDebtData: Omit<DebtItem, 'id'>) => {
+    setDebts(prevDebts => [
+      ...prevDebts,
+      { ...newDebtData, id: Date.now().toString() } // Simple ID generation
+    ]);
+    closeAddDebtDialog(); // Close dialog after adding
+  };
+
+  const handleEditDebt = (updatedDebt: DebtItem) => {
+    setDebts(prevDebts => 
+      prevDebts.map(debt => debt.id === updatedDebt.id ? updatedDebt : debt)
+    );
+    setIsAddDebtDialogOpen(false); // Close the dialog
+    setDebtToEdit(null);
+  };
+
+  const handleDeleteDebt = (debtId: string) => {
+    setDebts(prevDebts => prevDebts.filter(debt => debt.id !== debtId));
+    setIsAddDebtDialogOpen(false); // Close the dialog
+    setDebtToEdit(null); // Clear any debt being edited
+  };
+
+  // Calculate total utang dynamically
+  const totalUtangPerbulan = debts.reduce((sum, debt) => sum + debt.cicilanPerbulan, 0);
 
   const {
     data: userProfile,
@@ -70,78 +128,153 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 bg-gradient-to-b from-app-blue to-blue-600 z-0" />
-
+    <div className="relative min-h-screen bg-app-blue">
       {/* Konten utama */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="p-4">
-          {/* Profil User */}
-          <div className="mb-6">
-            <UserProfile userName={userProfile?.full_name} />
+        {/* Bagian Atas (Biru) */}
+        <div className="p-4 text-white bg-app-blue">
+          {/* Profil User & Add Button */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center space-x-2">
+              <div className="bg-black/20 p-2 rounded-lg flex items-center">
+                <UserProfile userName={userProfile?.full_name || 'teslagi'} />
+              </div>
+            </div>
+            <button className="bg-white text-app-blue px-4 py-2 rounded-lg font-semibold">Add+</button>
           </div>
 
-          {/* Summary */}
-          <div className="bg-blue-700 text-white rounded-xl p-4 z-10 relative">
-            <div className="flex justify-between items-center text-sm mb-4">
-              {/* Incomes */}
-              <div className="flex-1">
-                <div className="flex items-center gap-1 text-white/80 text-xs">
-                  <span className="text-yellow-400">↗️</span>
-                  <p>Total Incomes</p>
-                </div>
-                <p className="text-2xl font-bold">Rp {income.toLocaleString('id-ID')}</p>
-              </div>
-
-              {/* Separator */}
-              <div className="h-8 w-px bg-white/40 mx-2" />
-
-              {/* Expenses */}
-              <div className="flex-1 text-right">
-                <div className="flex justify-end items-center gap-1 text-white/80 text-xs">
-                  <span className="text-yellow-400">↘️</span>
-                  <p>Total Expenses</p>
-                </div>
-                <p className="text-2xl font-bold text-yellow-300">Rp {expenses.toLocaleString('id-ID')}</p>
-              </div>
+          {/* Status Keuangan & Jumlah Utang */}
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <p className="text-xs text-white/90">Status Keuangan</p>
+              <p className="text-3xl font-bold">Resiko Tinggi</p>
             </div>
-
-            {/* Progress Bar */}
-            <div className="mt-2 bg-white rounded-full h-6 flex items-center ">
-              <div className="bg-black text-white text-xs h-6 rounded-full flex items-center justify-center " style={{ width: `${progressPercentage}%`, minWidth: '3rem' }}>
-                {Math.round(progressPercentage)}%
-              </div>
-              <div className="flex-1 text-right text-black text-xs pr-2 font-medium">Balance: Rp {balance.toLocaleString('id-ID')}</div>
+            <div className="text-right">
+              <p className="text-xs text-white/90">Jumlah Utang</p>
+              <p className="text-2xl font-bold">Rp. 2.000.000.000</p>
             </div>
+          </div>
+
+          {/* Add Aset & Progress Bar */}
+          <div className="bg-black/20 p-1 rounded-full flex items-center text-sm mb-6">
+            <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-medium mr-2 whitespace-nowrap">+ Add Aset</button>
+            <div className="bg-white/50 h-5 flex-grow rounded-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 h-full bg-green-400 rounded-full" style={{ width: '35%' }}></div>
+            </div>
+            <span className="text-xs font-medium ml-2 whitespace-nowrap tabular-nums">Rp 700.000.000</span>
           </div>
         </div>
 
-        {/* Area putih hingga bawah */}
-        <div className="bg-white rounded-t-3xl p-4 flex-1 -mt-6 z-10 relative">
-          <SummaryCard />
-
-          <div className="mt-4">
-            <Tabs />
+        {/* Area Konten Bawah (Putih dengan rounded top) */}
+        <div className="bg-white rounded-t-[28px] p-4 flex-1 -mt-5 z-10 relative">
+          {/* Profil Utang */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-semibold text-gray-800">Profil Utang</h2>
+              <div>
+                <button onClick={openAddDebtDialog} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium">Add+</button>
+              </div>
+            </div>
+            <div className="bg-yellow-50 rounded-lg pb-1">
+              <div className="grid grid-cols-5 gap-px text-center text-xs font-semibold">
+                <div className="bg-yellow-300 p-2.5 rounded-tl-lg text-gray-700">Nama Utang</div>
+                <div className="bg-yellow-300 p-2.5 text-gray-700">Cicilan Terbayar</div>
+                <div className="bg-yellow-300 p-2.5 text-gray-700">Bunga</div>
+                <div className="bg-yellow-300 p-2.5 text-gray-700">Cicilan Perbulan</div>
+                <div className="bg-yellow-300 p-2.5 rounded-tr-lg text-gray-700">Aksi</div>
+              </div>
+              <div className="grid grid-cols-5 gap-px text-center text-xs text-gray-700 bg-yellow-200 rounded-b-lg overflow-hidden">
+                {debts.length > 0 ? (
+                  debts.map((debt, index) => (
+                    <React.Fragment key={debt.id}>
+                      <div className={`p-2.5 ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.namaUtang}</div>
+                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.cicilanSudahDibayar}/{debt.totalCicilan}</div>
+                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{typeof debt.bunga === 'number' ? `${debt.bunga}%` : debt.bunga}</div>
+                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.cicilanPerbulan.toLocaleString('id-ID')}</div>
+                      <div className={`p-2.5 flex items-center justify-center ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>
+                        <button 
+                          onClick={() => openEditDebtDialog(debt)}
+                          className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <div className="col-span-5 p-4 text-center text-gray-500 bg-yellow-50">
+                    Belum ada data utang.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center bg-blue-600 text-white p-2.5 rounded-lg mt-2 font-semibold text-sm">
+              <p>Total Utang</p>
+              <p className="tabular-nums">Rp. {totalUtangPerbulan.toLocaleString('id-ID')}</p>
+            </div>
           </div>
 
-          <div className="space-y-4 mt-4 pb-24">
-            <p className="text-md italic text-left text-blue-600">Detail Transaksi</p>
-            {transactions && transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TransactionItem
-                  key={transaction.id}
-                  icon={transaction.type === 'income' ? '💰' : '💸'} // Example icon
-                  title={transaction.note || transaction.category}
-                  time={new Date(transaction.created_at).toLocaleString('id-ID')}
-                  category={transaction.category}
-                  amount={`${transaction.type === 'expense' ? '-' : ''}Rp ${transaction.amount.toLocaleString('id-ID')}`}
-                  positive={transaction.type === 'income'}
-                />
-              ))
-            ) : (
-              <p>Tidak ada transaksi.</p>
-            )}
+          {/* Riwayat Keuangan */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-semibold text-gray-800">Riwayat Keuangan</h2>
+              <div>
+                <button 
+                  onClick={() => navigate('/input')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium"
+                >
+                  Add+
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <div 
+                onClick={() => navigate('/overview')} 
+                className="bg-gray-100 p-3.5 rounded-lg flex justify-between items-center cursor-pointer hover:bg-gray-200 transition-colors duration-150"
+              >
+                <p className="font-medium text-gray-700">Pendapatan</p>
+                <p className="font-semibold text-green-600 tabular-nums">Rp. {income.toLocaleString('id-ID')}</p>
+              </div>
+              <div 
+                onClick={() => navigate('/overview')} 
+                className="bg-gray-100 p-3.5 rounded-lg flex justify-between items-center cursor-pointer hover:bg-gray-200 transition-colors duration-150"
+              >
+                <p className="font-medium text-gray-700">Pengeluaran</p>
+                <p className="font-semibold text-red-500 tabular-nums">Rp. {expenses.toLocaleString('id-ID')}</p>
+              </div>
+            </div>
           </div>
+
+          {/* Status Sisa Uang */}
+          <div className="bg-yellow-50 p-3.5 rounded-lg pb-24">
+            <div className="flex justify-between items-center bg-yellow-400 p-2.5 rounded-md">
+              <p className="font-semibold text-sm text-black">Sisa Uang</p>
+              <p className="font-bold text-sm text-black tabular-nums">Rp. 2.300.000</p>
+            </div>
+            <div className="flex justify-between items-center bg-blue-600 text-white p-2.5 rounded-md mt-2.5">
+              <p className="font-semibold text-sm">Cicilan Yang Harus Dibayar</p>
+              <p className="font-bold text-sm tabular-nums">Rp. 3.300.000</p>
+            </div>
+            <div className="mt-3.5">
+              <p className="text-sm font-semibold text-gray-800">Satus :</p>
+              <p className="text-sm text-red-600 font-medium mt-1">
+                Berpotensi Gagal Bayar Karena Sisa Uang Kurang Dari Cicilan Yang Harus Dibayar
+              </p>
+            </div>
+          </div>
+
+          {/* Render AddDebtDialog */}
+          <AddDebtDialog 
+            isOpen={isAddDebtDialogOpen}
+            onClose={() => {
+              closeAddDebtDialog();
+              setDebtToEdit(null);
+            }}
+            onAddDebt={!debtToEdit ? handleAddDebt : undefined}
+            onEditDebt={debtToEdit ? handleEditDebt : undefined}
+            initialData={debtToEdit}
+            onDeleteDebt={debtToEdit ? handleDeleteDebt : undefined}
+          />
         </div>
       </div>
 

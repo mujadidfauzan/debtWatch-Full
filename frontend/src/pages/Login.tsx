@@ -12,6 +12,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,14 +57,29 @@ const LoginPage: React.FC = () => {
             <Label htmlFor="password" className="text-xs font-medium text-white">Password</Label>
             <Input 
               id="password" 
-              type="password" 
+              type={showPassword ? 'text' : 'password'} 
               placeholder="••••••••" 
               className="bg-white-600 border-b border-white-400 rounded-none text-black placeholder-gray-300  !placeholder-gray-300 focus:border-white focus:ring-0" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span className="absolute right-2 top-8 text-gray-400 cursor-pointer">👁️</span> 
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                // Replace with your "eye-off" icon component, e.g., from lucide-react
+                // <EyeOffIcon className="h-5 w-5" />
+                <></>
+              ) : (
+                // Replace with your "eye" icon component, e.g., from lucide-react
+                // <EyeIcon className="h-5 w-5" />
+                <></>
+              )}
+            </button>
           </div>
           {error && <p className="text-sm text-red-400 text-center py-2">{error}</p>}
           <div className="w-full space-y-3 pt-2">
