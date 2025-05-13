@@ -140,7 +140,6 @@ export default function Dashboard() {
                 <UserProfile userName={userProfile?.full_name || 'teslagi'} />
               </div>
             </div>
-            <button className="bg-white text-app-blue px-4 py-2 rounded-lg font-semibold">Add+</button>
           </div>
 
           {/* Status Keuangan & Jumlah Utang */}
