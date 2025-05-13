@@ -12,7 +12,6 @@ import SignupPage from "./pages/Signup";
 import ForgotPasswordPage from "./pages/ForgotPassword";
 import NewPasswordPage from "./pages/NewPassword";
 import LaunchPage from "./pages/Launch";
-import UsiaPage from "./pages/Question_Usia";
 import JenisKelaminPage from "./pages/Question_JenisKelamin";
 import TanggunganPage from "./pages/Question_Tanggungan";
 import PekerjaanPage from "./pages/Question_Pekerjaan";
@@ -23,6 +22,9 @@ import HomePage from "./pages/Home";
 import DetailPage from "./pages/DetailPage";
 import ChatbotPage from "./pages/ChatbotPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OnboardingPage from "./pages/OnboardingPage";
+import OnboardingPageTwo from "./pages/OnboardingPageTwo";
+import OnboardingPageThree from "./pages/OnboardingPageThree";
 
 import { auth } from "./firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
@@ -53,6 +55,9 @@ const App = () => {
           ) : (
             <Routes>
               <Route path="/" element={<LaunchPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/onboarding-2" element={<OnboardingPageTwo />} />
+              <Route path="/onboarding-3" element={<OnboardingPageThree />} />
               <Route
                 path="/auth"
                 element={currentUser ? <Navigate to="/home" replace /> : <AuthPage />}
@@ -70,12 +75,14 @@ const App = () => {
 
               <Route element={<ProtectedRoute currentUser={currentUser} />}>
                 <Route path="/input" element={<Index />} />
-                <Route path="/usia" element={<UsiaPage />} />
                 <Route path="/jk" element={<JenisKelaminPage />} />
                 <Route path="/tanggungan" element={<TanggunganPage />} />
                 <Route path="/pekerjaan" element={<PekerjaanPage />} />
                 <Route path="/asset" element={<AssetPage />} />
                 <Route path="/utang" element={<UtangPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/onboarding-2" element={<OnboardingPageTwo />} />
+                <Route path="/onboarding-3" element={<OnboardingPageThree />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/detail" element={<DetailPage />} />
                 <Route path="/chatbot" element={<ChatbotPage />} />

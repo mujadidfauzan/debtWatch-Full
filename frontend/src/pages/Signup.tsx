@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Eye, EyeOff } from 'lucide-react';
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const SignupPage: React.FC = () => {
   const [dob, setDob] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,7 +49,7 @@ const SignupPage: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
-      navigate('/usia');
+      navigate('/jk');
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email address is already in use.');
@@ -102,14 +105,23 @@ const SignupPage: React.FC = () => {
               placeholder="+ 123 456 789" 
               className="bg-gray-100 border-none rounded-lg placeholder-gray-400 focus:ring-blue-500" 
               value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
+              onChange={(e) => {
+                let inputValue = e.target.value;
+                // Allow '+' only as the first character, and then only digits
+                if (inputValue.startsWith('+')) {
+                  inputValue = '+' + inputValue.substring(1).replace(/[^\d]/g, '');
+                } else {
+                  inputValue = inputValue.replace(/[^\d]/g, '');
+                }
+                setMobile(inputValue);
+              }}
             />
           </div>
           <div className="space-y-1">
             <Label htmlFor="dob" className="text-xs font-semibold text-gray-600">Date Of Birth</Label>
             <Input 
               id="dob" 
-              type="text" 
+              type="date" 
               placeholder="DD / MM / YYYY" 
               className="bg-gray-100 border-none rounded-lg placeholder-gray-400 focus:ring-blue-500" 
               value={dob}
@@ -120,27 +132,37 @@ const SignupPage: React.FC = () => {
             <Label htmlFor="password" className="text-xs font-semibold text-gray-600">Password</Label>
             <Input 
               id="password" 
-              type="password" 
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••••" 
               className="bg-gray-100 border-none rounded-lg placeholder-gray-400 focus:ring-blue-500 pr-10" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span className="absolute right-3 top-7 text-gray-400 cursor-pointer">👁️</span> 
+            <span 
+              className="absolute right-3 top-7 text-gray-400 cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span> 
           </div>
           <div className="space-y-1 relative">
             <Label htmlFor="confirmPassword" className="text-xs font-semibold text-gray-600">Confirm Password</Label>
             <Input 
               id="confirmPassword" 
-              type="password" 
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="••••••••••" 
               className="bg-gray-100 border-none rounded-lg placeholder-gray-400 focus:ring-blue-500 pr-10" 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-             <span className="absolute right-3 top-7 text-gray-400 cursor-pointer">👁️</span> 
+             <span 
+              className="absolute right-3 top-7 text-gray-400 cursor-pointer"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span> 
           </div>
 
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
