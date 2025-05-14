@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import UserProfile from '../components/UserProfile';
 import NavigationBar from '../components/NavigationBar';
 import AddDebtDialog from '../components/AddDebtDialog';
+import AddAssetDialog from '../components/AddAssetDialog';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, getUserTransactions, getUserDebts, addUserDebt, updateUserDebt, deleteUserDebt, DebtItem, UserProfileData } from '../lib/api';
 import { auth } from '@/firebase';
@@ -16,6 +17,7 @@ export default function Dashboard() {
 
   const [isAddDebtDialogOpen, setIsAddDebtDialogOpen] = useState(false);
   const [debtToEdit, setDebtToEdit] = useState<DebtItem | null>(null);
+  const [isAddAssetDialogOpen, setIsAddAssetDialogOpen] = useState(false);
 
   // Get user profile data
   const {
@@ -55,7 +57,7 @@ export default function Dashboard() {
   });
 
   const openAddDebtDialog = () => {
-    setDebtToEdit(null); // Ensure we are in "add" mode
+    setDebtToEdit(null);
     setIsAddDebtDialogOpen(true);
   };
 
@@ -64,6 +66,14 @@ export default function Dashboard() {
   const openEditDebtDialog = (debt: DebtItem) => {
     setDebtToEdit(debt);
     setIsAddDebtDialogOpen(true);
+  };
+
+  const openAddAssetDialog = () => setIsAddAssetDialogOpen(true);
+  const closeAddAssetDialog = () => setIsAddAssetDialogOpen(false);
+
+  const handleAddAsset = (assetData: { name: string; quantity: number; price: number }) => {
+    console.log('New Asset Data:', assetData);
+    closeAddAssetDialog();
   };
 
   const handleAddDebt = async (newDebtData: Omit<DebtItem, 'id'>) => {
@@ -133,24 +143,6 @@ export default function Dashboard() {
   const [riskLevel, setRiskLevel] = useState<string>('');
   const [explanation, setExplanation] = useState<string>('');
 
-  // Fetch risk score
-  // useEffect(() => {
-  //   const fetchRiskScore = async () => {
-  //     if (!userId) return;
-  //     try {
-  //       const response = await fetch(`http://localhost:8000/users/${userId}/risk_scores/generate`, {
-  //         method: 'POST',
-  //       });
-  //       if (!response.ok) throw new Error('Failed to fetch financial risk data');
-  //       const data = await response.json();
-  //       setRiskLevel(data.risk_level);
-  //       setExplanation(data.explanation);
-  //     } catch (error) {
-  //       console.error('Error fetching risk score:', error);
-  //     }
-  //   };
-  //   fetchRiskScore();
-  // }, [userId, debts, transactions]);
 
   // Loading state check
   if ((isLoadingProfile || isLoadingTransactions || isLoadingDebts) && userId) {
@@ -205,13 +197,21 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Add Asset & Progress Bar */}
+          {/* Add Asset & Dan Visualisasi Total Asset */}
           <div className="bg-black/20 p-1 rounded-full flex items-center text-sm mb-6">
-            <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-medium mr-2 whitespace-nowrap">+ Add Asset</button>
-            <div className="bg-white/50 h-5 flex-grow rounded-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 h-full bg-green-400 rounded-full" style={{ width: '35%' }}></div>
+            <div className="flex w-full rounded-full overflow-hidden">
+              <button 
+                onClick={openAddAssetDialog}
+                className="bg-teal-900 text-white px-3 py-1.5 flex items-center hover:bg-teal-800 focus:outline-none flex-shrink-0 whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 mr-1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+                </svg>
+                <span className="text-xs font-medium">Add Asset</span>
+              </button>
+              <div className="bg-gray-100 text-black px-4 py-1.5 flex-grow flex items-center justify-end whitespace-nowrap">
+                <span className="text-xs font-medium tabular-nums">Rp 700.000.000</span>
+              </div>
             </div>
-            <span className="text-xs font-medium ml-2 whitespace-nowrap tabular-nums">Rp 700.000.000</span>
           </div>
         </div>
 
@@ -313,6 +313,13 @@ export default function Dashboard() {
             onEditDebt={debtToEdit ? handleEditDebt : undefined}
             initialData={debtToEdit}
             onDeleteDebt={debtToEdit ? handleDeleteDebt : undefined}
+          />
+
+          {/* Render AddAssetDialog */}
+          <AddAssetDialog
+            isOpen={isAddAssetDialogOpen}
+            onClose={closeAddAssetDialog}
+            onAddAsset={handleAddAsset}
           />
         </div>
       </div>

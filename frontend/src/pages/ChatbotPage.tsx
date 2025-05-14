@@ -21,7 +21,7 @@ const ChatbotPage: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 1,
-      text: 'Apa Yang Bisa Saya Bantu?',
+      text: 'How may I assist you?',
       isUser: false,
       archived: false,
     },
@@ -165,10 +165,10 @@ const ChatbotPage: React.FC = () => {
     const monthlyInterest = interest / 100 / 12;
     const payment = (amount * monthlyInterest) / (1 - Math.pow(1 + monthlyInterest, -term));
 
-    const estimationTextForUser = `Berikut hasil estimasi hutang saya: Jumlah Hutang Rp${amount.toLocaleString()}, Jangka Waktu ${term} bulan, Bunga Tahunan ${interest}%. Estimasi cicilan bulanan adalah Rp${payment.toLocaleString(
+    const estimationTextForUser = `Here is the debt estimation result: Debt amount Rp${amount.toLocaleString()}, Term ${term} months, Annual interest ${interest}%. The estimated monthly payment is Rp${payment.toLocaleString(
       undefined,
       { maximumFractionDigits: 0 }
-    )}. Bagaimana menurutmu?`;
+    )}. What do you think?`;
 
     // 2. Add the estimation as a USER message
     const userEstimationMessage: ChatMessage = {
@@ -248,7 +248,7 @@ const ChatbotPage: React.FC = () => {
       setMessages([
         {
           id: Date.now(),
-          text: `${greeting}, ada yang bisa saya bantud?`,
+          text: `${greeting}, how may I assist you?`,
           isUser: false,
           archived: false,
         },
@@ -341,14 +341,14 @@ const ChatbotPage: React.FC = () => {
               </button>
 
               <button className="flex items-center justify-center h-8 w-8 rounded-full text-app-blue" onClick={handleSendMessage}>
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
               </button>
             </div>
           ) : (
             <div className="rounded-lg bg-white shadow-md p-4">
-              <h3 className="text-sm text-gray-500 mb-2">Tanyakan tentang keuangan anda</h3>
+              <h3 className="text-sm text-gray-500 mb-2">Ask about your finances</h3>
               <div className="flex items-center">
                 <button className="flex items-center justify-center h-8 w-8 rounded-full bg-app-blue text-white mr-2">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -359,6 +359,9 @@ const ChatbotPage: React.FC = () => {
                 <button className="flex items-center justify-center h-8 px-3 rounded-full border text-app-blue flex-1 mr-2 bg-white" onClick={() => setShowEstimateForm(false)}>
                   <span className="mr-1">$</span>
                   <span>Estimate Debt</span>
+                  <svg className="h-5 w-5 ml-2 text-app-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
                 </button>
 
                 <button className="flex items-center justify-center h-8 w-8 rounded-full bg-app-blue text-white">

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -213,7 +214,7 @@ const Index = () => {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                {selectedDate ? format(selectedDate, "PPP", { locale: enUS }) : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -242,7 +243,7 @@ const Index = () => {
             placeholder="Write a note... (optional)"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full p-2 rounded bg-white/20 text-white placeholder-white/70"
+            className="w-full p-2 rounded bg-white/20 text-white placeholder-white"
           />
         </div>
         

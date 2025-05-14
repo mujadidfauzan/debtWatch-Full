@@ -24,10 +24,10 @@ const EstimateDebtForm: React.FC<EstimateDebtFormProps> = ({ onClose, onSubmit }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md">
-      <h3 className="font-medium mb-4">Estimasi Hutang</h3>
+      <h3 className="font-medium mb-4">Debt Estimation</h3>
       
       <div className="mb-3">
-        <label className="block mb-1">Jumlah Hutang</label>
+        <label className="block mb-1">Debt Amount</label>
         <input
           type="number"
           className="w-full p-2 border rounded-md"
@@ -37,7 +37,7 @@ const EstimateDebtForm: React.FC<EstimateDebtFormProps> = ({ onClose, onSubmit }
       </div>
       
       <div className="mb-3">
-        <label className="block mb-1">Waktu Cicilan (bulan)</label>
+        <label className="block mb-1">Payment Term (months)</label>
         <input
           type="number"
           className="w-full p-2 border rounded-md"
@@ -47,7 +47,7 @@ const EstimateDebtForm: React.FC<EstimateDebtFormProps> = ({ onClose, onSubmit }
       </div>
       
       <div className="mb-4">
-        <label className="block mb-1">Bunga (%)</label>
+        <label className="block mb-1">Interest Rate (%)</label>
         <input
           type="number"
           className="w-full p-2 border rounded-md"
@@ -61,13 +61,13 @@ const EstimateDebtForm: React.FC<EstimateDebtFormProps> = ({ onClose, onSubmit }
           className="px-4 py-2 border rounded-md"
           onClick={onClose}
         >
-          Batal
+          Cancel
         </button>
         <button 
           className="px-4 py-2 bg-app-blue text-white rounded-md"
           onClick={handleSubmit}
         >
-          Hitung
+          Calculate
         </button>
       </div>
     </div>

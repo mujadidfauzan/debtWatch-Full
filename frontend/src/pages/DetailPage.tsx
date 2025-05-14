@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "../components/ui/input";
-import { Switch } from "../components/ui/switch";
 import { Button } from "../components/ui/button";
-import { Camera, ArrowLeft, Plus } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Camera, ArrowLeft, Plus, Save, XCircle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient, QueryKey } from "@tanstack/react-query";
 import { getUserProfile, updateUserProfile, UserProfileData } from "../lib/api";
-import { auth } from "@/firebase"; // Import auth
+import { auth } from "@/firebase";
 
 // Remove placeholder USER_ID
 // const USER_ID = "user123";
@@ -14,12 +13,7 @@ import { auth } from "@/firebase"; // Import auth
 interface DetailFormData extends Partial<UserProfileData> {}
 
 const DetailPage: React.FC = () => {
-  // Modes: summary, detail, edit
-  const [mode, setMode] = useState<"summary" | "detail" | "edit">("summary");
-
-  // Remove hardcoded initial state if it's fetched
-  // const [userData, setUserData] = useState({...}); 
-
+  const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<DetailFormData>({});
@@ -30,11 +24,20 @@ const DetailPage: React.FC = () => {
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid;
 
-  const { data: userDataFromQuery, isLoading: isLoadingProfile, isError: isErrorProfile, error: errorProfile, refetch } = useQuery<UserProfileData, Error>({
-    queryKey: ['userProfile', userId], // Use dynamic userId
-    queryFn: () => getUserProfile(userId!), // Use dynamic userId
-    enabled: !!userId, // Enable only if userId exists
+  const { data: userDataFromQuery, isLoading: isLoadingProfile, isError: isErrorProfile, error: errorProfile, refetch } = useQuery<UserProfileData, Error, UserProfileData, QueryKey>({
+    queryKey: ['userProfile', userId as string], // Ensure userId is treated as part of the query key
+    queryFn: () => getUserProfile(userId!),
+    enabled: !!userId,
   });
+
+  // Populate formData when userDataFromQuery changes (e.g., on initial load or after refetch)
+  useEffect(() => {
+    if (userDataFromQuery) {
+      setFormData(userDataFromQuery);
+      // If UserProfileData had profileImageUrl, you would set it here:
+      // if (userDataFromQuery.profileImageUrl) setProfileImage(userDataFromQuery.profileImageUrl);
+    }
+  }, [userDataFromQuery]);
 
   const mutation = useMutation<
     { message: string }, 
@@ -46,40 +49,38 @@ const DetailPage: React.FC = () => {
     onSuccess: () => {
       // Use dynamic userId for invalidation
       queryClient.invalidateQueries({ queryKey: ['userProfile', userId] });
-      setMode("detail");
+      setIsEditing(false); // Exit edit mode after successful save
+      // No need to refetch here as invalidateQueries will trigger onSuccess of useQuery which updates formData
     },
     onError: (error: Error) => {
       console.error("Error updating profile:", error);
+      // Optionally, show a toast message to the user
     }
   });
-
-  useEffect(() => {
-    if (userDataFromQuery) {
-      setFormData(userDataFromQuery); 
-    }
-  }, [userDataFromQuery]);
 
   const handleInputChange = (field: keyof DetailFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleToggleChange = (field: keyof DetailFormData, value: boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value as any }));
-  };
-
   const handleEditClick = () => {
+    // Ensure formData is up-to-date with the latest fetched data before editing
     if (userDataFromQuery) {
-      setFormData(userDataFromQuery); 
+      setFormData(userDataFromQuery);
     }
-    setMode("edit");
+    setIsEditing(true);
   };
 
-  const handleUpdateClick = () => {
+  const handleSaveClick = () => {
     mutation.mutate(formData);
   };
 
-  const handleViewDetailClick = () => {
-    setMode("detail");
+  const handleCancelClick = () => {
+    setIsEditing(false);
+    // Reset formData to the original fetched data
+    if (userDataFromQuery) {
+      setFormData(userDataFromQuery);
+    }
+    // Or, could do a refetch() if preferred, though onSuccess of useQuery should handle resetting formData.
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +89,7 @@ const DetailPage: React.FC = () => {
       const imageUrl = URL.createObjectURL(file);
       setProfileImage(imageUrl);
       // TODO: Add logic to upload image to storage and update profile URL in Firestore/backend
+      // This should probably also update formData.profileImageUrl and then call mutation.mutate
     }
   };
 
@@ -107,218 +109,130 @@ const DetailPage: React.FC = () => {
 
   // Use isErrorProfile from useQuery
   if (isErrorProfile) {
-    return <div className="flex justify-center items-center min-h-screen">Error loading profile: {errorProfile.message}</div>;
+    return <div className="flex justify-center items-center min-h-screen">Error loading profile: {errorProfile?.message}</div>;
   }
 
-  // --- Render logic using `userDataFromQuery` and `formData` ---
+  // Simplified as profileImageUrl is not in UserProfileData type for now
+  const userProfileImageToDisplay = profileImage; 
 
-  // Account Settings View (Summary Mode - Yellow Background)
-  if (mode === "summary") {
-    return (
-      <div className="flex flex-col h-screen bg-[#FFD600]">
-        {/* Header */}
-        <header className="p-4 flex items-center">
-          <button className="text-white" onClick={() => window.history.back()}>
+  // --- Combined Single View --- 
+  return (
+    <div className="flex flex-col min-h-screen bg-[#2341DD]">
+      {/* Header */}
+      <header className="p-4 flex items-center justify-between sticky top-0 z-10 bg-[#2341DD]">
+        <div className="flex-1 flex justify-start">
+          <button 
+            className="text-white p-2 rounded-full hover:bg-white/10"
+            onClick={() => window.history.back()} // Or use navigate(-1) if using react-router-dom for navigation
+          >
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-white text-xl font-medium mx-auto pr-6">Account Settings</h1>
-        </header>
+        </div>
+        <h1 className="text-white text-xl font-semibold whitespace-nowrap">
+          Profil Saya
+        </h1>
+        <div className="flex-1 flex justify-end"> {/* This div will ensure buttons are pushed to the right but have space */}
+          {!isEditing ? (
+            <Button onClick={handleEditClick} variant="outline" className="text-black border-white hover:bg-white hover:text-blue-700 text-sm px-3 py-1.5">
+              Edit
+            </Button>
+          ) : (
+            <div className="flex items-center space-x-1 sm:space-x-2"> {/* Reduced space-x for smaller screens */}
+              <Button onClick={handleSaveClick} variant="ghost" className="p-1.5 sm:p-2 text-green-400 hover:bg-white/10 hover:text-green-300" disabled={mutation.isPending}>
+                {mutation.isPending ? <Save className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+              </Button>
+              <Button onClick={handleCancelClick} variant="ghost" className="p-1.5 sm:p-2 text-red-400 hover:bg-white/10 hover:text-red-300" disabled={mutation.isPending}>
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </header>
 
-        {/* Profile content */}
-        <div className="flex flex-col items-center px-6 pb-4">
-          {/* Profile image */}
-          <div className="relative w-24 h-24">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-white border-2 border-white">
-              {profileImage ? (
-                <img
-                  src={profileImage}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+      {/* Profile Content */}
+      <div className="flex-1 px-6 py-8 overflow-y-auto text-white">
+        {/* Profile Image Section - Centered */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative w-28 h-28 mb-2">
+            <div className="w-28 h-28 rounded-full overflow-hidden bg-white border-2 border-white shadow-lg">
+              {userProfileImageToDisplay ? (
+                <img src={userProfileImageToDisplay} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                // TODO: Fetch profile image URL from userDataFromQuery if available
-                <div className="w-full h-full flex items-center justify-center bg-white">
-                  <Camera className="h-8 w-8 text-gray-300" />
+                <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                  <Camera className="h-12 w-12 text-gray-400" />
                 </div>
               )}
             </div>
-            
-            {/* Tombol upload dengan icon plus */}
             <button 
               onClick={handleImageClick}
-              className="absolute bottom-0 right-8 bg-blue-500 rounded-full p-1.5 shadow-md border-2 border-white"
+              className="absolute bottom-1 right-1 bg-blue-500 hover:bg-blue-600 rounded-full p-2 shadow-md border-2 border-white"
+              aria-label="Change profile picture"
             >
               <Plus className="h-4 w-4 text-white" />
             </button>
-            
-            {/* File input yang tersembunyi */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              className="hidden"
-              accept="image/*"
-            />
-            
-            {/* This ID badge seems decorative, keeping it */}
-            <div className="absolute bottom-0 right-0 bg-[#FFD600] text-white rounded-full p-1 border-2 border-white">
-              <span className="text-xs font-bold">ID</span>
-            </div>
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
           </div>
-          
-          {/* Use fetched data */}
-          <h2 className="font-medium text-lg mt-2">{userDataFromQuery?.full_name || "User Name"}</h2> 
-          {/* Display actual UID (optional, maybe remove for user) */}
-          {/* <p className="text-sm text-gray-700">ID: {userId}</p> */}
         </div>
 
-        {/* White card for form - Use fetched data */}
-        <div className="w-full bg-white rounded-t-3xl p-6 flex-1">
-          <h3 className="font-medium text-lg mb-4">Account Settings</h3>
+        {/* User Information Form/Display */}
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if(isEditing) handleSaveClick(); }}>
           
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm mb-1">Username</label>
-              <Input 
-                value={userDataFromQuery?.full_name || ""}
-                className="bg-[#EFF3F8] border-none"
-                disabled
-              />
+          {(isEditing ? [
+            { label: 'Nama Lengkap', field: 'full_name', type: 'text' },
+            { label: 'Email', field: 'email', type: 'email' }, // Email might not be editable depending on auth
+            { label: 'Telepon', field: 'phone', type: 'tel' },
+            { label: 'Usia', field: 'age', type: 'number' },
+            { label: 'Jenis Kelamin', field: 'gender', type: 'select', options: ['Laki-laki', 'Perempuan', 'Lainnya'] },
+            { label: 'Pekerjaan', field: 'occupation', type: 'text' },
+            { label: 'Jumlah Tanggungan', field: 'dependents', type: 'number' },
+            // { label: 'Aset', field: 'assets', type: 'text' }, // Asset handling might be more complex than simple text
+          ] : [
+            { label: 'Nama Lengkap', field: 'full_name' },
+            { label: 'Email', field: 'email' },
+            { label: 'Telepon', field: 'phone' },
+            { label: 'Usia', field: 'age' },
+            { label: 'Jenis Kelamin', field: 'gender' },
+            { label: 'Pekerjaan', field: 'occupation' },
+            { label: 'Jumlah Tanggungan', field: 'dependents' },
+            // { label: 'Aset', field: 'assets' },
+          ]).map(item => (
+            <div key={item.field} className="py-2 border-b border-white/20">
+              <label className="block text-sm font-light text-white/80 mb-1">{item.label}</label>
+              {isEditing ? (
+                item.type === 'select' && item.options ? (
+                  <select 
+                    value={(formData[item.field as keyof DetailFormData] as string) || ''}
+                    onChange={(e) => handleInputChange(item.field as keyof DetailFormData, e.target.value)}
+                    className="w-full p-2.5 rounded bg-white/10 text-black placeholder-gray-500 border border-white/30 focus:ring-indigo-500 focus:border-indigo-500 text-base"
+                  >
+                    <option value="" disabled className="text-gray-500">Pilih {item.label}</option>
+                    {item.options.map(opt => <option key={opt} value={opt} className="text-black bg-white">{opt}</option>)}
+                  </select>
+                ) : (
+                  <Input 
+                    type={item.type || 'text'}
+                    value={(formData[item.field as keyof DetailFormData] as string | number) || ''}
+                    onChange={(e) => handleInputChange(item.field as keyof DetailFormData, e.target.value)}
+                    className="w-full p-2.5 rounded bg-white/10 text-black placeholder-gray-500 border border-white/30 focus:ring-indigo-500 focus:border-indigo-500 text-base"
+                    disabled={item.field === 'email'} // Example: make email non-editable
+                  />
+                )
+              ) : (
+                <p className="text-base text-white min-h-[2.5rem] flex items-center">
+                  {(item.field === 'assets' && Array.isArray(formData.assets)) 
+                    ? formData.assets.join(', ') 
+                    : (formData[item.field as keyof DetailFormData] as string | number | undefined)
+                  } 
+                  {(!formData[item.field as keyof DetailFormData] && formData[item.field as keyof DetailFormData] !==0 ) && <span className="text-white/60 italic">Belum diisi</span>}
+                </p>
+              )}
             </div>
-            
-            <div>
-              <label className="block text-sm mb-1">Phone</label>
-              <Input 
-                value={userDataFromQuery?.phone || ""}
-                className="bg-[#EFF3F8] border-none"
-                disabled
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm mb-1">Email Address</label>
-              <Input 
-                value={userDataFromQuery?.email || ""}
-                className="bg-[#EFF3F8] border-none"
-                disabled
-              />
-            </div>
-            
-            {/* Switches use formData which is populated by useEffect from userDataFromQuery */}
-            <div className="flex items-center justify-between py-2 border-b">
-              <span className="text-sm">Push Notifications</span>
-              <Switch 
-                checked={formData.pushNotifications || false}
-                onCheckedChange={(checked) => handleToggleChange("pushNotifications", checked)}
-                className="data-[state=checked]:bg-[#FFD600]"
-                disabled // Disable in summary mode
-              />
-            </div>
-            
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm">Turn Dark Theme</span>
-              <Switch 
-                checked={formData.darkTheme || false}
-                onCheckedChange={(checked) => handleToggleChange("darkTheme", checked)}
-                className="data-[state=checked]:bg-blue-500"
-                disabled // Disable in summary mode
-              />
-            </div>
-            
-            <div className="mt-6">
-              <Button 
-                type="button" // Prevent form submission
-                onClick={handleViewDetailClick}
-                className="w-full bg-[#FFD600] hover:bg-[#FFD600]/90 text-black rounded-full py-5"
-              >
-                Lihat Detail Profil
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
+          ))}
 
-  // --- Detail/Edit Mode --- 
-  // This part needs refinement to use `formData` for inputs when editing
-  // and potentially display more fields from `userDataFromQuery` in detail mode.
-  // The existing code seems complex with multiple modes, focusing on fixing the data fetching first.
-
-  // Detail Profile View (Detail/Edit Mode - Blue Background)
-  // Placeholder for Detail/Edit mode - Adapt this part based on your needs
-  return (
-    <div className="flex flex-col h-screen bg-[#2341DD]">
-      <header className="p-4 flex items-center">
-        <button 
-          className="text-white"
-          onClick={() => setMode("summary")}
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </button>
-        <h1 className="text-white text-xl font-medium mx-auto pr-6">
-          {mode === 'edit' ? 'Edit Detail Profil' : 'Detail Profil'}
-        </h1>
-         {mode === 'detail' && (
-            <Button onClick={handleEditClick} variant="outline" className="text-white border-white hover:bg-white hover:text-blue-700 text-sm">Edit</Button>
-          )}
-      </header>
-      <div className="flex-1 px-6 py-2 overflow-y-auto text-white">
-         <h3 className="font-medium text-lg mb-4">User Information</h3>
-         {/* Display more user data here from formData or userDataFromQuery */} 
-         <p>Full Name: {formData.full_name || 'N/A'}</p>
-         <p>Email: {formData.email || 'N/A'}</p>
-         <p>Phone: {formData.phone || 'N/A'}</p>
-         <p>Age: {formData.age || 'N/A'}</p>
-         <p>Gender: {formData.gender || 'N/A'}</p>
-         <p>Occupation: {formData.occupation || 'N/A'}</p>
-         <p>Dependents: {formData.dependents ?? 'N/A'}</p> {/* Use ?? for number/0 */}
-         <p>Assets: {Array.isArray(formData.assets) ? formData.assets.join(', ') : formData.assets || 'N/A'}</p>
-         {/* Add other fields: dateOfBirth, activeDebt, debtAmount, location, marital_status etc. */}
-
-         {/* Example: Show input fields only in edit mode */}
-         {mode === 'edit' && (
-           <form className="space-y-4 mt-4" onSubmit={(e) => { e.preventDefault(); handleUpdateClick(); }}>
-             {/* Example Input Field */}
-             <div>
-               <label className="block text-sm mb-1">Phone Number</label>
-               <Input 
-                 type="tel"
-                 value={formData.phone || ''}
-                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                 className="bg-white/20 border-white/50 text-white placeholder-white/70"
-               />
-             </div>
-             {/* Add other input fields for editable data here */}
-             
-             {/* Switches for Notifications/Theme */}
-             <div className="flex items-center justify-between py-2 border-b border-white/50">
-               <span className="text-sm">Push Notifications</span>
-               <Switch 
-                 checked={formData.pushNotifications || false}
-                 onCheckedChange={(checked) => handleToggleChange("pushNotifications", checked)}
-                 className="data-[state=checked]:bg-[#FFD600]"
-               />
-             </div>
-             <div className="flex items-center justify-between py-2">
-               <span className="text-sm">Turn Dark Theme</span>
-               <Switch 
-                 checked={formData.darkTheme || false}
-                 onCheckedChange={(checked) => handleToggleChange("darkTheme", checked)}
-                 className="data-[state=checked]:bg-white/50"
-               />
-             </div>
-
-             <Button 
-               type="submit" 
-               className="w-full bg-[#FFD600] hover:bg-[#FFD600]/90 text-black rounded-full py-3 mt-4"
-               disabled={mutation.isPending} // Use isPending from useMutation
-             >
-               {mutation.isPending ? 'Saving...' : 'Save Changes'}
-             </Button>
-             {mutation.isError && <p className="text-red-300 text-sm mt-2">Error saving: {mutation.error.message}</p>}
-           </form>
-         )}
+       
+        
+          {mutation.isError && <p className="text-red-300 text-sm mt-2 text-center">Gagal menyimpan: {mutation.error?.message}</p>}
+        </form>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ const TabSelector: React.FC<TabSelectorProps> = ({ activeTab, setActiveTab }) =>
         }`}
         onClick={() => setActiveTab("income")}
       >
-        Pendapatan
+        Income
       </button>
       <button
         className={`flex-1 py-2 px-4 rounded-full text-black font-bold text-center ${
@@ -23,7 +23,7 @@ const TabSelector: React.FC<TabSelectorProps> = ({ activeTab, setActiveTab }) =>
         }`}
         onClick={() => setActiveTab("expense")}
       >
-        Pengeluaran
+        Expense
       </button>
     </div>
   );

@@ -9,29 +9,29 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ onChatSelect }) => {
   return (
     <div className="w-64 h-full bg-white border-r overflow-y-auto">
       <div className="p-4">
-        <h2 className="font-medium mb-2">Hari ini</h2>
+        <h2 className="font-medium mb-2">Today</h2>
         <div className="ml-2 mb-4">
           <div 
             className="py-1 cursor-pointer hover:bg-gray-100"
             onClick={() => onChatSelect("hutang-kpr")}
           >
-            Hutang KPR
+            Home Loan Debt
           </div>
           <div 
             className="py-1 cursor-pointer hover:bg-gray-100"
             onClick={() => onChatSelect("hutang-usaha")}
           >
-            Hutang Usaha
+            Business Debt
           </div>
         </div>
         
-        <h2 className="font-medium mb-2">Kemarin</h2>
+        <h2 className="font-medium mb-2">Yesterday</h2>
         <div className="ml-2">
           <div 
             className="py-1 cursor-pointer hover:bg-gray-100"
             onClick={() => onChatSelect("hutang-bank")}
           >
-            Hutang Bank
+            Bank Debt
           </div>
         </div>
       </div>
