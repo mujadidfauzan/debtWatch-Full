@@ -23,7 +23,7 @@ const JenisKelaminPage: React.FC = () => {
       setLoading(true);
       try {
         await updateUserProfile(user.uid, { gender });
-        navigate('/dependents'); // Navigate to the next question (Tanggungan)
+        navigate('/tanggungan'); // Navigate to the next question (Tanggungan)
       } catch (err) {
         console.error('Error updating user gender:', err);
         setError('Failed to save gender. Please try again.');

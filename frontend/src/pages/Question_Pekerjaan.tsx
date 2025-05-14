@@ -23,7 +23,7 @@ const PekerjaanPage: React.FC = () => {
       setLoading(true);
       try {
         await updateUserProfile(user.uid, { occupation: pekerjaan.trim() });
-        navigate('/assets'); // Navigate to Asset page
+        navigate('/asset'); // Navigate to Asset page
       } catch (err) {
         console.error('Error updating user occupation:', err);
         setError('Failed to save occupation. Please try again.');

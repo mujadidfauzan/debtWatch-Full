@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { addUserDebt } from '@/lib/api'; // Pastikan path ini benar
 
 interface UtangItem {
   id: string;
@@ -76,16 +76,16 @@ const Question_Utang: React.FC = () => {
     }
 
     try {
-      const loanRef = collection(db, 'users', user.uid, 'loans');
-
       const savePromises = utangItems.map((item) => {
-        const is_active = item.cicilanSudahBayar < item.cicilanTotalBulan;
+        const debtPayload = {
+          namaUtang: item.nama, // 🟢 gunakan namaUtang sesuai interface
+          cicilanTotalBulan: item.cicilanTotalBulan,
+          cicilanSudahDibayar: item.cicilanSudahBayar,
+          bunga: item.bunga,
+          cicilanPerbulan: item.cicilanPerbulan,
+        };
 
-        return addDoc(loanRef, {
-          ...item,
-          is_active,
-          created_at: new Date().toISOString(),
-        });
+        return addUserDebt(user.uid, debtPayload);
       });
 
       await Promise.all(savePromises);

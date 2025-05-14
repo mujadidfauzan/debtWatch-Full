@@ -25,7 +25,7 @@ const TanggunganPage: React.FC = () => {
         await updateUserProfile(user.uid, {
           dependents: parseInt(tanggungan, 10),
         });
-        navigate('/occupation'); // Navigate to Pekerjaan page
+        navigate('/pekerjaan'); // Navigate to Pekerjaan page
       } catch (err) {
         console.error('Error updating user dependents:', err);
         setError('Failed to save dependents. Please try again.');

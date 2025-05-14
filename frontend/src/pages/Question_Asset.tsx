@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateUserAssets } from '@/lib/api';
+import { updateUserAssets, AssetItem } from '@/lib/api';
 import { auth } from '@/firebase';
 
-// Updated Asset interface
-interface Asset {
-  id: string;
-  displayName: string;
-  jumlah: number;
-  hargaJual: number[];
-  isCustom: boolean;
-}
-
 // Initial predefined assets
-const initialAssetsData: Asset[] = [
+const initialAssetsData: AssetItem[] = [
   { id: 'rumah', displayName: 'House', jumlah: 0, hargaJual: [], isCustom: false },
   { id: 'tanah', displayName: 'Land', jumlah: 0, hargaJual: [], isCustom: false },
   { id: 'kendaraan', displayName: 'Vehicle', jumlah: 0, hargaJual: [], isCustom: false },
@@ -24,7 +15,7 @@ let customAssetCounter = 0; // For default naming of new assets
 
 const Question_Asset: React.FC = () => {
   const navigate = useNavigate();
-  const [assets, setAssets] = useState<Asset[]>(initialAssetsData);
+  const [assets, setAssets] = useState<AssetItem[]>(initialAssetsData);
   const [totalAset, setTotalAset] = useState<number>(0);
 
   const handleJumlahChange = (assetId: string, value: string) => {
@@ -67,7 +58,7 @@ const Question_Asset: React.FC = () => {
 
   const handleAddAsset = () => {
     customAssetCounter++;
-    const newAsset: Asset = {
+    const newAsset: AssetItem = {
       id: `custom_${Date.now()}_${customAssetCounter}`,
       displayName: `New Asset ${customAssetCounter}`,
       jumlah: 0,
@@ -101,10 +92,13 @@ const Question_Asset: React.FC = () => {
     }
 
     try {
-      const formattedAssets = assets.map((asset) => ({
-        name: asset.displayName,
+      const formattedAssets: AssetItem[] = assets.map((asset) => ({
+        id: asset.id,
+        displayName: asset.displayName,
         jumlah: asset.jumlah,
         hargaJual: asset.hargaJual,
+        isCustom: asset.isCustom ?? false,
+        created_at: asset.created_at ?? new Date().toISOString(),
       }));
 
       await updateUserAssets(user.uid, formattedAssets);

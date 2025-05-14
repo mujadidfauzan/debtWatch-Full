@@ -5,18 +5,7 @@ import NavigationBar from '../components/NavigationBar';
 import AddDebtDialog from '../components/AddDebtDialog';
 import AddAssetDialog from '../components/AddAssetDialog';
 import { useQuery } from '@tanstack/react-query';
-import {
-  getUserProfile,
-  getUserTransactions,
-  getUserDebts,
-  addUserDebt,
-  updateUserDebt,
-  deleteUserDebt,
-  DebtItem,
-  UserProfileData,
-  updateUserAssets,
-  AssetPayload
-} from '../lib/api';
+import { getUserProfile, getUserTransactions, getUserDebts, addUserDebt, updateUserDebt, deleteUserDebt, DebtItem, UserProfileData, updateUserAssets, AssetItem, getUserAssets } from '../lib/api';
 import { auth } from '@/firebase';
 
 export default function Dashboard() {
@@ -29,6 +18,7 @@ export default function Dashboard() {
   const [isAddDebtDialogOpen, setIsAddDebtDialogOpen] = useState(false);
   const [debtToEdit, setDebtToEdit] = useState<DebtItem | null>(null);
   const [isAddAssetDialogOpen, setIsAddAssetDialogOpen] = useState(false);
+  const [totalAssetValue, setTotalAssetValue] = useState<number | null>(null);
 
   // Get user profile data
   const {
@@ -84,20 +74,23 @@ export default function Dashboard() {
 
   const handleAddAsset = async (assetData: { name: string; quantity: number; price: number }) => {
     if (!userId) {
-      console.error("User not logged in. Cannot add asset.");
+      console.error('User not logged in. Cannot add asset.');
       // Optionally, provide user feedback here (e.g., a toast notification)
       return;
     }
 
-    const newAssetPayload: AssetPayload = {
-      name: assetData.name,
+    const newAssetItem: AssetItem = {
+      id: `asset_${Date.now()}`, // atau pakai UUID kalau kamu punya
+      displayName: assetData.name, // ✅ ganti `name` jadi `displayName`
       jumlah: assetData.quantity,
-      hargaJual: [assetData.price], // Assuming price maps to a single-element array for hargaJual
+      hargaJual: [assetData.price],
+      isCustom: true,
+      created_at: new Date().toISOString(),
     };
 
     try {
-      // The updateUserAssets function in api.ts expects an array of AssetPayload
-      await updateUserAssets(userId, [newAssetPayload]);
+      // The updateUserAssets function in api.ts expects an array of AssetItem
+      await updateUserAssets(userId, [newAssetItem]);
       console.log('Asset added successfully via API');
       // If you have a query to fetch assets, you would refetch it here.
       // e.g., queryClient.invalidateQueries(['userAssets', userId]);
@@ -176,6 +169,46 @@ export default function Dashboard() {
   const [riskLevel, setRiskLevel] = useState<string>('');
   const [explanation, setExplanation] = useState<string>('');
 
+  useEffect(() => {
+    const fetchRiskScore = async () => {
+      if (!userId) return;
+      try {
+        const response = await fetch(`http://localhost:8000/users/${userId}/risk_scores/generate`, {
+          method: 'POST',
+        });
+        if (!response.ok) throw new Error('Gagal mengambil data risiko keuangan');
+        const data = await response.json();
+        console.log(data);
+        setRiskLevel(data.risk_level);
+        setExplanation(data.explanation);
+      } catch (error) {
+        console.error('Error fetching risk score:', error);
+      }
+    };
+    fetchRiskScore();
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchTotalAssets = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const assets = await getUserAssets(user.uid);
+        const total = assets.reduce((sum, asset) => {
+          return sum + asset.hargaJual.reduce((acc, val) => acc + val, 0);
+        }, 0);
+        setTotalAssetValue(total);
+      } catch (error) {
+        console.error('Error fetching assets:', error);
+        setTotalAssetValue(0); // Optional: fallback
+      }
+    };
+
+    fetchTotalAssets();
+  }, []);
+
+  const formatCurrency = (value: number): string => `Rp ${value.toLocaleString('id-ID')}`;
 
   // Loading state check
   if ((isLoadingProfile || isLoadingTransactions || isLoadingDebts) && userId) {
@@ -233,19 +266,14 @@ export default function Dashboard() {
           {/* Add Asset & Dan Visualisasi Total Asset */}
           <div className="bg-black/20 p-1 rounded-full flex items-center text-sm mb-6">
             <div className="flex w-full rounded-full overflow-hidden">
-              <button
-                onClick={openAddAssetDialog}
-                className="bg-teal-900 text-white px-3 py-1.5 flex items-center hover:bg-teal-800 focus:outline-none flex-shrink-0 whitespace-nowrap">
+              <button onClick={openAddAssetDialog} className="bg-teal-900 text-white px-3 py-1.5 flex items-center hover:bg-teal-800 focus:outline-none flex-shrink-0 whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 mr-1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
                 </svg>
                 <span className="text-xs font-medium">Add Asset</span>
               </button>
-              <div
-                onClick={() => navigate('/assets-list')}
-                className="bg-gray-100 text-black px-4 py-1.5 flex-grow flex items-center justify-end whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors"
-              >
-                <span className="text-xs font-medium tabular-nums">Rp 700.000.000</span> {/* This should ideally come from fetched asset data */}
+              <div onClick={() => navigate('/assets-list')} className="bg-gray-100 text-black px-4 py-1.5 flex-grow flex items-center justify-end whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors">
+                <span className="text-xs font-medium tabular-nums">{totalAssetValue !== null ? formatCurrency(totalAssetValue) : 'Loading...'}</span>
               </div>
             </div>
           </div>
@@ -352,11 +380,7 @@ export default function Dashboard() {
           />
 
           {/* Render AddAssetDialog */}
-          <AddAssetDialog
-            isOpen={isAddAssetDialogOpen}
-            onClose={closeAddAssetDialog}
-            onAddAsset={handleAddAsset}
-          />
+          <AddAssetDialog isOpen={isAddAssetDialogOpen} onClose={closeAddAssetDialog} onAddAsset={handleAddAsset} />
         </div>
       </div>
 

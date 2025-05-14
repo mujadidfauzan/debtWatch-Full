@@ -219,13 +219,16 @@ export const deleteUserDebt = async (userId: string, debtId: string): Promise<{ 
   return response.json();
 };
 
-export interface AssetPayload {
-  name: string;
+export interface AssetItem {
+  id: string;
+  displayName: string; // Changed from name to displayName to match Question_Asset.tsx
   jumlah: number;
   hargaJual: number[];
+  isCustom?: boolean; // Added to match Question_Asset.tsx
+  created_at?: string; // Made optional
 }
 
-export const updateUserAssets = async (userId: string, assets: AssetPayload[]) => {
+export const updateUserAssets = async (userId: string, assets: AssetItem[]) => {
   const headers = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/users/${userId}/assets`, {
     method: 'POST',
@@ -234,5 +237,132 @@ export const updateUserAssets = async (userId: string, assets: AssetPayload[]) =
   });
 
   if (!response.ok) throw new Error('Failed to update assets');
+  return response.json();
+};
+
+export const getUserAssets = async (userId: string): Promise<AssetItem[]> => {
+  const headers = await getAuthHeader();
+  delete headers['Content-Type'];
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/assets`, { headers });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to fetch user assets');
+  }
+
+  // Transform the API response to match our expected format if needed
+  const assets = await response.json();
+  return assets.map((asset: any) => ({
+    id: asset.id || `asset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    displayName: asset.name || asset.displayName || 'Unknown Asset',
+    jumlah: asset.jumlah || 0,
+    hargaJual: asset.hargaJual || [],
+    isCustom: asset.isCustom || false,
+    created_at: asset.created_at,
+  }));
+};
+
+// Chat room interfaces
+export interface ChatRoom {
+  id: string;
+  name: string;
+  created_at: string;
+  last_message?: string;
+  last_message_time?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: string;
+  archived?: boolean;
+}
+
+// Get user's chat rooms
+export const getUserChatRooms = async (userId: string): Promise<ChatRoom[]> => {
+  const headers = await getAuthHeader();
+  delete headers['Content-Type'];
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/chatrooms`, { headers });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to fetch chat rooms');
+  }
+
+  return response.json();
+};
+
+// Create a new chat room
+export const createChatRoom = async (userId: string, name: string): Promise<ChatRoom> => {
+  const headers = await getAuthHeader();
+  headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/chatrooms`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ name, created_at: new Date().toISOString() }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to create chat room');
+  }
+
+  return response.json();
+};
+
+// Get messages for a specific chat room
+export const getChatMessages = async (userId: string, roomId: string): Promise<ChatMessage[]> => {
+  const headers = await getAuthHeader();
+  delete headers['Content-Type'];
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/chatrooms/${roomId}/messages`, { headers });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to fetch chat messages');
+  }
+
+  return response.json();
+};
+
+// Send a message to a chat room
+export const sendChatMessage = async (userId: string, roomId: string, message: string): Promise<ChatMessage> => {
+  const headers = await getAuthHeader();
+  headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/chatrooms/${roomId}/messages`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ message, timestamp: new Date().toISOString() }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to send message');
+  }
+
+  return response.json();
+};
+
+// Update chat message (for archive/unarchive)
+export const updateChatMessage = async (userId: string, roomId: string, messageId: string, updates: Partial<ChatMessage>): Promise<{ message: string }> => {
+  const headers = await getAuthHeader();
+  headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/chatrooms/${roomId}/messages/${messageId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
+    throw new Error(errorData.detail || 'Failed to update message');
+  }
+
   return response.json();
 };
