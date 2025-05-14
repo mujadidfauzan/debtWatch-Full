@@ -5,7 +5,18 @@ import NavigationBar from '../components/NavigationBar';
 import AddDebtDialog from '../components/AddDebtDialog';
 import AddAssetDialog from '../components/AddAssetDialog';
 import { useQuery } from '@tanstack/react-query';
-import { getUserProfile, getUserTransactions, getUserDebts, addUserDebt, updateUserDebt, deleteUserDebt, DebtItem, UserProfileData } from '../lib/api';
+import {
+  getUserProfile,
+  getUserTransactions,
+  getUserDebts,
+  addUserDebt,
+  updateUserDebt,
+  deleteUserDebt,
+  DebtItem,
+  UserProfileData,
+  updateUserAssets,
+  AssetPayload
+} from '../lib/api';
 import { auth } from '@/firebase';
 
 export default function Dashboard() {
@@ -71,9 +82,31 @@ export default function Dashboard() {
   const openAddAssetDialog = () => setIsAddAssetDialogOpen(true);
   const closeAddAssetDialog = () => setIsAddAssetDialogOpen(false);
 
-  const handleAddAsset = (assetData: { name: string; quantity: number; price: number }) => {
-    console.log('New Asset Data:', assetData);
-    closeAddAssetDialog();
+  const handleAddAsset = async (assetData: { name: string; quantity: number; price: number }) => {
+    if (!userId) {
+      console.error("User not logged in. Cannot add asset.");
+      // Optionally, provide user feedback here (e.g., a toast notification)
+      return;
+    }
+
+    const newAssetPayload: AssetPayload = {
+      name: assetData.name,
+      jumlah: assetData.quantity,
+      hargaJual: [assetData.price], // Assuming price maps to a single-element array for hargaJual
+    };
+
+    try {
+      // The updateUserAssets function in api.ts expects an array of AssetPayload
+      await updateUserAssets(userId, [newAssetPayload]);
+      console.log('Asset added successfully via API');
+      // If you have a query to fetch assets, you would refetch it here.
+      // e.g., queryClient.invalidateQueries(['userAssets', userId]);
+      closeAddAssetDialog();
+    } catch (error) {
+      console.error('Failed to add asset:', error);
+      // Optionally, provide user feedback here (e.g., a toast notification)
+      // Consider if the dialog should remain open for the user to retry or correct input
+    }
   };
 
   const handleAddDebt = async (newDebtData: Omit<DebtItem, 'id'>) => {
@@ -200,7 +233,7 @@ export default function Dashboard() {
           {/* Add Asset & Dan Visualisasi Total Asset */}
           <div className="bg-black/20 p-1 rounded-full flex items-center text-sm mb-6">
             <div className="flex w-full rounded-full overflow-hidden">
-              <button 
+              <button
                 onClick={openAddAssetDialog}
                 className="bg-teal-900 text-white px-3 py-1.5 flex items-center hover:bg-teal-800 focus:outline-none flex-shrink-0 whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 mr-1.5">
@@ -208,8 +241,11 @@ export default function Dashboard() {
                 </svg>
                 <span className="text-xs font-medium">Add Asset</span>
               </button>
-              <div className="bg-gray-100 text-black px-4 py-1.5 flex-grow flex items-center justify-end whitespace-nowrap">
-                <span className="text-xs font-medium tabular-nums">Rp 700.000.000</span>
+              <div
+                onClick={() => navigate('/assets-list')}
+                className="bg-gray-100 text-black px-4 py-1.5 flex-grow flex items-center justify-end whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors"
+              >
+                <span className="text-xs font-medium tabular-nums">Rp 700.000.000</span> {/* This should ideally come from fetched asset data */}
               </div>
             </div>
           </div>

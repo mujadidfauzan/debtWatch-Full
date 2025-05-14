@@ -25,7 +25,7 @@ const TanggunganPage: React.FC = () => {
         await updateUserProfile(user.uid, {
           dependents: parseInt(tanggungan, 10),
         });
-        navigate('/pekerjaan'); // Navigate to Pekerjaan page
+        navigate('/occupation'); // Navigate to Pekerjaan page
       } catch (err) {
         console.error('Error updating user dependents:', err);
         setError('Failed to save dependents. Please try again.');
@@ -53,14 +53,14 @@ const TanggunganPage: React.FC = () => {
             <span className="text-2xl">👨‍👩‍👧‍👦</span>
           </div>
           {/* Pertanyaan */}
-          <h2 className="text-white text-lg font-semibold">Berapa jumlah Anggota Keluarga yang Anda Tanggung?</h2>
+          <h2 className="text-white text-lg font-semibold">How many family members do you support?</h2>
           {/* Input angka */}
           <input
             type="number"
             min="0"
             value={tanggungan}
             onChange={(e) => setTanggungan(e.target.value)}
-            placeholder="Masukkan Jumlah"
+            placeholder="Enter Number"
             className="no-spinner w-full rounded-lg bg-gray-200 text-center py-3 px-4 placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-white"
           />
           {error && <p className="text-sm text-red-300 mt-2">{error}</p>} {/* Display error */}
@@ -69,7 +69,7 @@ const TanggunganPage: React.FC = () => {
         {/* Tombol Kembali */}
         <div className="fixed bottom-8 left-12">
           <Button className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-200 font-medium py-3 px-6 hover:text-black rounded-xl" onClick={() => navigate('/jk')}>
-            Kembali
+            Back
           </Button>
         </div>
 
@@ -79,7 +79,7 @@ const TanggunganPage: React.FC = () => {
             onClick={handleNext} // Changed to handleNext
             disabled={!tanggungan || loading}
           >
-            {loading ? 'Saving...' : 'Lanjut'}
+            {loading ? 'Saving...' : 'Next'}
           </Button>
         </div>
       </div>

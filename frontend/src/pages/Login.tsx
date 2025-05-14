@@ -89,14 +89,7 @@ const LoginPage: React.FC = () => {
               disabled={loading}
             >
               {loading ? 'Logging In...' : 'Log In'}
-            </Button>
-            <button 
-              type="button"
-              className="text-xs text-gray-300 hover:text-white w-full text-center"
-              onClick={() => navigate('/forgot-password')}
-            >
-              Forgot Password?
-            </button>
+            </Button>          
           </div>
         </form>
 

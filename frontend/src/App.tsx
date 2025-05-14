@@ -9,7 +9,6 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/Auth";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
-import ForgotPasswordPage from "./pages/ForgotPassword";
 import NewPasswordPage from "./pages/NewPassword";
 import LaunchPage from "./pages/Launch";
 import JenisKelaminPage from "./pages/Question_JenisKelamin";
@@ -26,6 +25,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import OnboardingPage from "./pages/OnboardingPage";
 import OnboardingPageTwo from "./pages/OnboardingPageTwo";
 import OnboardingPageThree from "./pages/OnboardingPageThree";
+import AssetsPage from "./pages/AssetsPage";
 
 import { auth } from "./firebase";
 import { User, onAuthStateChanged } from "firebase/auth";
@@ -71,7 +71,6 @@ const App = () => {
                 path="/signup"
                 element={currentUser ? <Navigate to="/home" replace /> : <SignupPage />}
               />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/new-password" element={<NewPasswordPage />} />
 
               <Route element={<ProtectedRoute currentUser={currentUser} />}>
@@ -88,6 +87,7 @@ const App = () => {
                 <Route path="/detail" element={<DetailPage />} />
                 <Route path="/chatbot" element={<ChatbotPage />} />
                 <Route path="/overview" element={<FinancialOverviewPage />} />
+                <Route path="/assets-list" element={<AssetsPage />} />
               </Route>
 
               <Route path="/load" element={<LoadingPage />} />

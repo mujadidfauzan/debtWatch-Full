@@ -23,7 +23,7 @@ const JenisKelaminPage: React.FC = () => {
       setLoading(true);
       try {
         await updateUserProfile(user.uid, { gender });
-        navigate('/tanggungan'); // Navigate to the next question (Tanggungan)
+        navigate('/dependents'); // Navigate to the next question (Tanggungan)
       } catch (err) {
         console.error('Error updating user gender:', err);
         setError('Failed to save gender. Please try again.');
@@ -51,14 +51,14 @@ const JenisKelaminPage: React.FC = () => {
             <span className="text-2xl">♀️♂️</span>
           </div>
           {/* Pertanyaan */}
-          <h2 className="text-black text-lg font-semibold">Apa Jenis Kelamin Anda?</h2>
+          <h2 className="text-black text-lg font-semibold">What is Your Gender?</h2>
           {/* Pilihan jenis kelamin */}
           <div className="flex justify-center gap-6">
-            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Laki-laki' ? 'bg-blue-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Laki-laki')}>
-              <span>Laki-laki</span>
+            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Male' ? 'bg-blue-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Male')}>
+              <span>Male</span>
             </div>
-            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Perempuan' ? 'bg-pink-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Perempuan')}>
-              <span>Perempuan</span>
+            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Female' ? 'bg-pink-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Female')}>
+              <span>Female</span>
             </div>
           </div>
           {error && <p className="text-sm text-red-500 mt-2">{error}</p>} {/* Display error */}
@@ -67,13 +67,13 @@ const JenisKelaminPage: React.FC = () => {
         {/* Tombol Kembali */}
         <div className="fixed bottom-8 left-12">
           <Button className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl" onClick={() => navigate('/usia')}>
-            Kembali
+            Back
           </Button>
         </div>
         {/* Tombol Lanjut */}
         <div className="fixed bottom-8 right-12">
           <Button className={`${gender ? 'bg-blue-500 hover:bg-blue-700' : 'bg-gray-400'} text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300`} onClick={handleNext} disabled={!gender || loading}>
-            {loading ? 'Saving...' : 'Lanjut'}
+            {loading ? 'Saving...' : 'Next'}
           </Button>
         </div>
       </div>

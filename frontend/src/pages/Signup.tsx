@@ -49,7 +49,7 @@ const SignupPage: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
-      navigate('/jk');
+      navigate('/gender');
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email address is already in use.');

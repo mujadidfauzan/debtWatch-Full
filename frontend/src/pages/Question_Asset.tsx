@@ -14,10 +14,10 @@ interface Asset {
 
 // Initial predefined assets
 const initialAssetsData: Asset[] = [
-  { id: 'rumah', displayName: 'Rumah', jumlah: 0, hargaJual: [], isCustom: false },
-  { id: 'tanah', displayName: 'Tanah', jumlah: 0, hargaJual: [], isCustom: false },
-  { id: 'kendaraan', displayName: 'Kendaraan', jumlah: 0, hargaJual: [], isCustom: false },
-  { id: 'emas', displayName: 'Emas', jumlah: 0, hargaJual: [], isCustom: false },
+  { id: 'rumah', displayName: 'House', jumlah: 0, hargaJual: [], isCustom: false },
+  { id: 'tanah', displayName: 'Land', jumlah: 0, hargaJual: [], isCustom: false },
+  { id: 'kendaraan', displayName: 'Vehicle', jumlah: 0, hargaJual: [], isCustom: false },
+  { id: 'emas', displayName: 'Gold', jumlah: 0, hargaJual: [], isCustom: false },
 ];
 
 let customAssetCounter = 0; // For default naming of new assets
@@ -69,7 +69,7 @@ const Question_Asset: React.FC = () => {
     customAssetCounter++;
     const newAsset: Asset = {
       id: `custom_${Date.now()}_${customAssetCounter}`,
-      displayName: `Aset Baru ${customAssetCounter}`,
+      displayName: `New Asset ${customAssetCounter}`,
       jumlah: 0,
       hargaJual: [],
       isCustom: true,
@@ -96,7 +96,7 @@ const Question_Asset: React.FC = () => {
   const handleSaveAssetsAndNext = async () => {
     const user = auth.currentUser;
     if (!user) {
-      alert('Silakan login terlebih dahulu.');
+      alert('Please log in first.');
       return;
     }
 
@@ -110,15 +110,15 @@ const Question_Asset: React.FC = () => {
       await updateUserAssets(user.uid, formattedAssets);
       navigate('/utang');
     } catch (err) {
-      console.error('Gagal mengirim data aset:', err);
-      alert('Gagal menyimpan aset. Silakan coba lagi.');
+      console.error('Failed to send asset data:', err);
+      alert('Failed to save assets. Please try again.');
     }
   };
 
   return (
     <div className="bg-yellow-400 min-h-screen p-4 flex flex-col items-center">
       <div className="bg-yellow-400 p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Detail Aset</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Asset Details</h1>
 
         {assets.map((asset) => (
           <div key={asset.id} className="mb-6 p-4 border border-gray-300 rounded-lg bg-white/20 relative">
@@ -129,7 +129,7 @@ const Question_Asset: React.FC = () => {
                   value={asset.displayName}
                   onChange={(e) => handleAssetNameChange(asset.id, e.target.value)}
                   className="text-lg font-semibold p-1 border border-blue-300 rounded w-full mr-2 bg-blue-50 placeholder-gray-500"
-                  placeholder="Nama Aset"
+                  placeholder="Asset Name"
                 />
               ) : (
                 <h2 className="text-lg font-semibold">{asset.displayName}</h2>
@@ -137,8 +137,8 @@ const Question_Asset: React.FC = () => {
               <button
                 onClick={() => handleRemoveAsset(asset.id)}
                 className="text-red-500 hover:text-red-700 font-semibold p-1 rounded-full flex items-center justify-center"
-                aria-label={`Hapus ${asset.displayName}`}
-                title={`Hapus ${asset.displayName}`}
+                aria-label={`Remove ${asset.displayName}`}
+                title={`Remove ${asset.displayName}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path
@@ -151,7 +151,7 @@ const Question_Asset: React.FC = () => {
             </div>
             <input
               type="number"
-              placeholder="Jumlah"
+              placeholder="Quantity"
               className="w-full p-2 mb-2 border border-gray-300 rounded-md bg-blue-100 placeholder-gray-500"
               value={asset.jumlah || ''}
               onChange={(e) => handleJumlahChange(asset.id, e.target.value)}
@@ -161,7 +161,7 @@ const Question_Asset: React.FC = () => {
               <div key={index} className="relative mb-2">
                 <input
                   type="number"
-                  placeholder={`Harga Jual ${asset.displayName} ke-${index + 1}`}
+                  placeholder={`Selling Price of ${asset.displayName} #${index + 1}`}
                   className="w-full p-2 border border-gray-300 rounded-md bg-white placeholder-gray-500"
                   value={harga || ''}
                   onChange={(e) => handleHargaJualChange(asset.id, index, e.target.value)}
@@ -175,16 +175,16 @@ const Question_Asset: React.FC = () => {
         {/* Buttons Section */}
         <div className="flex justify-between items-center mb-6 mt-2">
           <button onClick={handleAddAsset} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-            Tambahkan Aset Lainnya
+            Add Another Asset
           </button>
           <button onClick={handleSaveAssetsAndNext} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-            Lanjut
+            Continue
           </button>
         </div>
 
         {/* Total Aset Section */}
         <div className="bg-blue-600 p-4 rounded-lg text-white mt-4">
-          <p className="text-lg font-semibold mb-2">Total Aset</p>
+          <p className="text-lg font-semibold mb-2">Total Assets</p>
           <div className="bg-yellow-400 p-3 rounded-md text-black text-xl font-bold text-right">{formatCurrency(totalAset)}</div>
         </div>
       </div>
