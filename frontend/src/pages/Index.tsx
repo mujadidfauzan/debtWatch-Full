@@ -27,6 +27,9 @@ const Index = () => {
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [firstOperand, setFirstOperand] = useState<string | null>(null);
+  const [operation, setOperation] = useState<string | null>(null);
+  const [waitingForSecondOperand, setWaitingForSecondOperand] = useState<boolean>(false);
 
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid;
@@ -62,7 +65,7 @@ const Index = () => {
   });
 
   const handleAddTransaction = () => {
-    const numericAmount = parseFloat(amount);
+    const numericAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
     if (isNaN(numericAmount) || numericAmount <= 0) {
       toast.error("Please enter a valid amount.");
       return;
@@ -91,26 +94,87 @@ const Index = () => {
     mutation.mutate(transactionToAdd);
   };
 
+  const performCalculation = () => {
+    if (!firstOperand || !operation || amount === null) return amount;
+
+    const prev = parseFloat(firstOperand.replace(/\./g, '').replace(',', '.'));
+    const current = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+    let result: number;
+
+    switch (operation) {
+      case '+':
+        result = prev + current;
+        break;
+      case '−':
+        result = prev - current;
+        break;
+      case '×':
+        result = prev * current;
+        break;
+      case '÷':
+        if (current === 0) {
+          toast.error("Cannot divide by zero");
+          return "0";
+        }
+        result = prev / current;
+        break;
+      default:
+        return amount;
+    }
+    return result.toString();
+  };
+
   const handleKeyPress = (key: string) => {
     if (key === "C") {
       setAmount("0");
+      setFirstOperand(null);
+      setOperation(null);
+      setWaitingForSecondOperand(false);
     } else if (key === "⌫") {
-      setAmount(prev => prev.length > 1 ? prev.slice(0, -1) : "0");
+      if (waitingForSecondOperand) {
+          setAmount("0");
+      } else {
+        setAmount(prev => prev.length > 1 ? prev.slice(0, -1) : "0");
+      }
     } else if (key === "enter") {
-      handleAddTransaction(); 
+      if (firstOperand && operation && amount && !waitingForSecondOperand) {
+        const result = performCalculation();
+        setAmount(result);
+        setFirstOperand(null);
+        setOperation(null);
+        setWaitingForSecondOperand(false);
+      } else {
+        if (!operation) {
+            handleAddTransaction();
+        }
+      }
     } else if (["÷", "×", "−", "+"].includes(key)) {
-      console.log("Operation:", key);
+      if (amount === "0" && firstOperand === null) return;
+
+      if (firstOperand && operation && !waitingForSecondOperand) {
+        const result = performCalculation();
+        setAmount(result);
+        setFirstOperand(result);
+      } else {
+        setFirstOperand(amount);
+      }
+      setOperation(key);
+      setWaitingForSecondOperand(true);
     } else {
-      setAmount(prev => {
-        if (prev === "0" && key !== ".") {
-          return key;
-        } else {
-          if (key === "." && prev.includes(".")) {
-            return prev;
+      if (waitingForSecondOperand) {
+        setAmount(key === "." ? "0." : key);
+        setWaitingForSecondOperand(false);
+      } else {
+        setAmount(prev => {
+          if (key === ".") {
+            return prev.includes(".") ? prev : prev + key;
+          }
+          if (prev === "0" && key !== ".") {
+            return key;
           }
           return prev + key;
-        }
-      });
+        });
+      }
     }
   };
 
@@ -130,7 +194,12 @@ const Index = () => {
         </div>
 
         <div className="mb-4">
-          <AmountDisplay amount={amount} />
+          <AmountDisplay 
+            amount={amount} 
+            firstOperand={firstOperand}
+            operation={operation}
+            waitingForSecondOperand={waitingForSecondOperand}
+          />
         </div>
         
         <div className="space-y-3 mb-4">
