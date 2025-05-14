@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase'; // Import auth and db
-import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
+import { updateUserProfile } from '@/lib/api';
 
 const PekerjaanPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,26 +15,23 @@ const PekerjaanPage: React.FC = () => {
     const user = auth.currentUser;
 
     if (!pekerjaan.trim()) {
-      setError("Please enter your occupation.");
+      setError('Please enter your occupation.');
       return;
     }
 
     if (user) {
       setLoading(true);
       try {
-        const userDocRef = doc(db, "users", user.uid);
-        await setDoc(userDocRef, { 
-          occupation: pekerjaan.trim()
-        }, { merge: true }); 
+        await updateUserProfile(user.uid, { occupation: pekerjaan.trim() });
         navigate('/asset'); // Navigate to Asset page
       } catch (err) {
-        console.error("Error updating user occupation:", err);
-        setError("Failed to save occupation. Please try again.");
+        console.error('Error updating user occupation:', err);
+        setError('Failed to save occupation. Please try again.');
       } finally {
         setLoading(false);
       }
     } else {
-      setError("No user is logged in. Please log in again.");
+      setError('No user is logged in. Please log in again.');
       navigate('/login');
     }
   };
@@ -53,10 +50,8 @@ const PekerjaanPage: React.FC = () => {
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto">
             <span className="text-2xl">💼</span> {/* Ikon pekerjaan */}
           </div>
-
           {/* Pertanyaan */}
           <h2 className="text-black text-lg font-semibold">Apa Pekerjaan Anda?</h2>
-
           {/* Input pekerjaan */}
           <input
             type="text"
@@ -68,23 +63,15 @@ const PekerjaanPage: React.FC = () => {
           {error && <p className="text-sm text-red-700 mt-2">{error}</p>} {/* Error color adjusted for yellow bg */}
         </div>
 
-{/* Tombol Kembali */}
+        {/* Tombol Kembali */}
         <div className="fixed bottom-8 left-12">
-        <Button
-  className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl"
-  onClick={() => navigate('/tanggungan')}
->
-  Kembali
-</Button>
-
-          </div>
+          <Button className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl" onClick={() => navigate('/tanggungan')}>
+            Kembali
+          </Button>
+        </div>
 
         <div className="fixed bottom-8 right-12">
-          <Button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
-            onClick={handleNext}
-            disabled={!pekerjaan.trim() || loading} 
-          >
+          <Button className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg" onClick={handleNext} disabled={!pekerjaan.trim() || loading}>
             {loading ? 'Saving...' : 'Lanjut'}
           </Button>
         </div>

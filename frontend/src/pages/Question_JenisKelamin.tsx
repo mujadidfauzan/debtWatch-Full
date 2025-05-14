@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase'; // Import auth and db
-import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
+import { updateUserProfile } from '@/lib/api';
 
 const JenisKelaminPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,36 +15,30 @@ const JenisKelaminPage: React.FC = () => {
     const user = auth.currentUser;
 
     if (!gender) {
-      setError("Please select your gender.");
+      setError('Please select your gender.');
       return;
     }
 
     if (user) {
       setLoading(true);
       try {
-        const userDocRef = doc(db, "users", user.uid);
-        await setDoc(userDocRef, { 
-          gender: gender 
-        }, { merge: true }); 
+        await updateUserProfile(user.uid, { gender });
         navigate('/tanggungan'); // Navigate to the next question (Tanggungan)
       } catch (err) {
-        console.error("Error updating user gender:", err);
-        setError("Failed to save gender. Please try again.");
+        console.error('Error updating user gender:', err);
+        setError('Failed to save gender. Please try again.');
       } finally {
         setLoading(false);
       }
     } else {
-      setError("No user is logged in. Please log in again.");
+      setError('No user is logged in. Please log in again.');
       navigate('/login');
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <div
-        className="relative h-[40vh] bg-cover bg-center z-0"
-        style={{ backgroundImage: 'url(../gender.jpg)' }}
-      >
+      <div className="relative h-[40vh] bg-cover bg-center z-0" style={{ backgroundImage: 'url(../gender.jpg)' }}>
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500 to-transparent opacity-70 z-0"></div>
       </div>
@@ -56,30 +50,14 @@ const JenisKelaminPage: React.FC = () => {
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto">
             <span className="text-2xl">♀️♂️</span>
           </div>
-
           {/* Pertanyaan */}
           <h2 className="text-black text-lg font-semibold">Apa Jenis Kelamin Anda?</h2>
-
           {/* Pilihan jenis kelamin */}
           <div className="flex justify-center gap-6">
-            <div
-              className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${
-                gender === 'Laki-laki'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-black'
-              }`}
-              onClick={() => setGender('Laki-laki')}
-            >
+            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Laki-laki' ? 'bg-blue-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Laki-laki')}>
               <span>Laki-laki</span>
             </div>
-            <div
-              className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${
-                gender === 'Perempuan'
-                  ? 'bg-pink-500 text-white'
-                  : 'bg-white text-black'
-              }`}
-              onClick={() => setGender('Perempuan')}
-            >
+            <div className={`p-4 cursor-pointer rounded-xl transition-all duration-300 ${gender === 'Perempuan' ? 'bg-pink-500 text-white' : 'bg-white text-black'}`} onClick={() => setGender('Perempuan')}>
               <span>Perempuan</span>
             </div>
           </div>
@@ -88,22 +66,13 @@ const JenisKelaminPage: React.FC = () => {
 
         {/* Tombol Kembali */}
         <div className="fixed bottom-8 left-12">
-          <Button
-            className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl"
-            onClick={() => navigate('/usia')}
-          >
+          <Button className="bg-yellow-100 bg-opacity-60 hover:bg-opacity-100 hover:bg-grey-100 text-gray-400 font-medium py-3 px-6 hover:text-black rounded-xl" onClick={() => navigate('/usia')}>
             Kembali
           </Button>
         </div>
         {/* Tombol Lanjut */}
         <div className="fixed bottom-8 right-12">
-          <Button
-            className={`${
-              gender ? 'bg-blue-500 hover:bg-blue-700' : 'bg-gray-400'
-            } text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300`}
-            onClick={handleNext}
-            disabled={!gender || loading}
-          >
+          <Button className={`${gender ? 'bg-blue-500 hover:bg-blue-700' : 'bg-gray-400'} text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300`} onClick={handleNext} disabled={!gender || loading}>
             {loading ? 'Saving...' : 'Lanjut'}
           </Button>
         </div>

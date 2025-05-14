@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import (  # scoring,
+from routes import (
     assets,
     chat,
     credit_history,

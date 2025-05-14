@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { updateUserAssets } from '@/lib/api';
+import { auth } from '@/firebase';
 
 // Updated Asset interface
 interface Asset {
@@ -31,11 +33,13 @@ const Question_Asset: React.FC = () => {
       newJumlah = 0;
     }
 
-    setAssets(prevAssets =>
-      prevAssets.map(asset => {
+    setAssets((prevAssets) =>
+      prevAssets.map((asset) => {
         if (asset.id === assetId) {
           const currentHargaJual = asset.hargaJual;
-          const newHargaJual = Array(newJumlah).fill(0).map((_, i) => currentHargaJual[i] || 0);
+          const newHargaJual = Array(newJumlah)
+            .fill(0)
+            .map((_, i) => currentHargaJual[i] || 0);
           return { ...asset, jumlah: newJumlah, hargaJual: newHargaJual };
         }
         return asset;
@@ -45,8 +49,8 @@ const Question_Asset: React.FC = () => {
 
   const handleHargaJualChange = (assetId: string, index: number, value: string) => {
     const numericValue = parseInt(value, 10);
-    setAssets(prevAssets =>
-      prevAssets.map(asset => {
+    setAssets((prevAssets) =>
+      prevAssets.map((asset) => {
         if (asset.id === assetId) {
           const newHargaJual = [...asset.hargaJual];
           newHargaJual[index] = isNaN(numericValue) ? 0 : numericValue;
@@ -58,11 +62,7 @@ const Question_Asset: React.FC = () => {
   };
 
   const handleAssetNameChange = (assetId: string, newName: string) => {
-    setAssets(prevAssets =>
-      prevAssets.map(asset =>
-        asset.id === assetId ? { ...asset, displayName: newName } : asset
-      )
-    );
+    setAssets((prevAssets) => prevAssets.map((asset) => (asset.id === assetId ? { ...asset, displayName: newName } : asset)));
   };
 
   const handleAddAsset = () => {
@@ -74,16 +74,16 @@ const Question_Asset: React.FC = () => {
       hargaJual: [],
       isCustom: true,
     };
-    setAssets(prevAssets => [...prevAssets, newAsset]);
+    setAssets((prevAssets) => [...prevAssets, newAsset]);
   };
 
   const handleRemoveAsset = (assetIdToRemove: string) => {
-    setAssets(prevAssets => prevAssets.filter(asset => asset.id !== assetIdToRemove));
+    setAssets((prevAssets) => prevAssets.filter((asset) => asset.id !== assetIdToRemove));
   };
 
   useEffect(() => {
     let total = 0;
-    assets.forEach(asset => {
+    assets.forEach((asset) => {
       total += asset.hargaJual.reduce((sum, current) => sum + current, 0);
     });
     setTotalAset(total);
@@ -93,12 +93,34 @@ const Question_Asset: React.FC = () => {
     return `Rp ${value.toLocaleString('id-ID')}`;
   };
 
+  const handleSaveAssetsAndNext = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Silakan login terlebih dahulu.');
+      return;
+    }
+
+    try {
+      const formattedAssets = assets.map((asset) => ({
+        name: asset.displayName,
+        jumlah: asset.jumlah,
+        hargaJual: asset.hargaJual,
+      }));
+
+      await updateUserAssets(user.uid, formattedAssets);
+      navigate('/utang');
+    } catch (err) {
+      console.error('Gagal mengirim data aset:', err);
+      alert('Gagal menyimpan aset. Silakan coba lagi.');
+    }
+  };
+
   return (
     <div className="bg-yellow-400 min-h-screen p-4 flex flex-col items-center">
       <div className="bg-yellow-400 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Detail Aset</h1>
 
-        {assets.map(asset => (
+        {assets.map((asset) => (
           <div key={asset.id} className="mb-6 p-4 border border-gray-300 rounded-lg bg-white/20 relative">
             <div className="flex justify-between items-start mb-2">
               {asset.isCustom ? (
@@ -112,14 +134,18 @@ const Question_Asset: React.FC = () => {
               ) : (
                 <h2 className="text-lg font-semibold">{asset.displayName}</h2>
               )}
-              <button 
+              <button
                 onClick={() => handleRemoveAsset(asset.id)}
                 className="text-red-500 hover:text-red-700 font-semibold p-1 rounded-full flex items-center justify-center"
                 aria-label={`Hapus ${asset.displayName}`}
                 title={`Hapus ${asset.displayName}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c.342.052.682.107 1.022.166m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c.342.052.682.107 1.022.166m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                  />
                 </svg>
               </button>
             </div>
@@ -148,14 +174,10 @@ const Question_Asset: React.FC = () => {
 
         {/* Buttons Section */}
         <div className="flex justify-between items-center mb-6 mt-2">
-          <button 
-            onClick={handleAddAsset} 
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+          <button onClick={handleAddAsset} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
             Tambahkan Aset Lainnya
           </button>
-          <button 
-            onClick={() => navigate('/utang')}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+          <button onClick={handleSaveAssetsAndNext} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
             Lanjut
           </button>
         </div>
@@ -163,9 +185,7 @@ const Question_Asset: React.FC = () => {
         {/* Total Aset Section */}
         <div className="bg-blue-600 p-4 rounded-lg text-white mt-4">
           <p className="text-lg font-semibold mb-2">Total Aset</p>
-          <div className="bg-yellow-400 p-3 rounded-md text-black text-xl font-bold text-right">
-            {formatCurrency(totalAset)}
-          </div>
+          <div className="bg-yellow-400 p-3 rounded-md text-black text-xl font-bold text-right">{formatCurrency(totalAset)}</div>
         </div>
       </div>
     </div>

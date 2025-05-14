@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase'; // Import auth and db
-import { doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
+import { updateUserProfile } from '@/lib/api';
 
 const TanggunganPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,14 +22,9 @@ const TanggunganPage: React.FC = () => {
     if (user) {
       setLoading(true);
       try {
-        const userDocRef = doc(db, 'users', user.uid, 'financial_dependents', 'main');
-        await setDoc(
-          userDocRef,
-          {
-            dependents_count: parseInt(tanggungan, 10),
-          },
-          { merge: true }
-        );
+        await updateUserProfile(user.uid, {
+          dependents: parseInt(tanggungan, 10),
+        });
         navigate('/pekerjaan'); // Navigate to Pekerjaan page
       } catch (err) {
         console.error('Error updating user dependents:', err);
