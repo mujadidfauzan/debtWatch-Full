@@ -410,7 +410,7 @@ const ChatbotPage: React.FC = () => {
       {showSidebar && (
         <div className="w-64 bg-white border-r h-full overflow-y-auto">
           <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="font-medium">Chat History</h2>
+            <h2 className="font-medium text-lg md:text-xl">Chat History</h2>
             <button className="p-1 rounded-full hover:bg-gray-100" onClick={handleCreateNewChat}>
               <svg className="w-5 h-5 text-app-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -421,7 +421,7 @@ const ChatbotPage: React.FC = () => {
             {chatRooms.map((room) => (
               <div key={room.id} className={`p-3 rounded-lg mb-2 cursor-pointer ${currentRoomId === room.id ? 'bg-blue-50 text-app-blue' : 'hover:bg-gray-50'}`} onClick={() => handleChatSelect(room.id)}>
                 <div className="font-medium">{room.name}</div>
-                {room.last_message && <div className="text-xs text-gray-500 truncate mt-1">{room.last_message}</div>}
+                {room.last_message && <div className="text-xs md:text-lg text-gray-500 truncate mt-1">{room.last_message}</div>}
               </div>
             ))}
           </div>
@@ -437,7 +437,7 @@ const ChatbotPage: React.FC = () => {
                 <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
-            <h1 className="text-lg font-medium text-app-blue">DebtBot</h1>
+            <h1 className="text-lg md:text-xl font-medium text-app-blue">DebtBot</h1>
           </div>
           <button
             ref={menuButtonRef}
@@ -460,7 +460,7 @@ const ChatbotPage: React.FC = () => {
         </header>
 
         {/* Chat Area with Yellow Gradient Background */}
-        <div ref={chatAreaRef} className="flex-1 overflow-y-auto p-4 flex flex-col bg-chat-gradient">
+        <div ref={chatAreaRef} className="flex-1 overflow-y-auto p-4 flex flex-col bg-chat-gradient text-base md:text-xl">
           {isLoadingMessages ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-app-blue"></div>
@@ -474,11 +474,11 @@ const ChatbotPage: React.FC = () => {
         <div className="p-3 bg-white border-t">
           {!showEstimateForm ? (
             <div className="flex items-center bg-white rounded-lg border p-2">
-              <input type="text" className="flex-1 outline-none px-2" placeholder="Ketikkan pesan..." value={input} onChange={handleInputChange} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
+              <input type="text" className="flex-1 outline-none px-2 text-base md:text-xl" placeholder="Ketikkan pesan..." value={input} onChange={handleInputChange} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
 
               <button className="flex items-center justify-center h-8 px-3 mr-2 rounded-full bg-gray-100 hover:bg-gray-200 text-app-blue" onClick={() => setShowEstimateForm(true)}>
                 <span className="mr-1">$</span>
-                <span>Estimate Debt</span>
+                <span className="text-base md:text-xl">Estimate Debt</span>
               </button>
 
               <button className="flex items-center justify-center h-8 w-8 rounded-full text-app-blue" onClick={handleSendMessage}>
@@ -489,7 +489,7 @@ const ChatbotPage: React.FC = () => {
             </div>
           ) : (
             <div className="rounded-lg bg-white shadow-md p-4">
-              <h3 className="text-sm text-gray-500 mb-2">Ask about your finances</h3>
+              <h3 className="text-sm md:text-xl text-gray-500 mb-2">Ask about your finances</h3>
               <div className="flex items-center">
                 <button className="flex items-center justify-center h-8 w-8 rounded-full bg-app-blue text-white mr-2">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">

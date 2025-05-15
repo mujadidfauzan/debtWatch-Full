@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from services.firestore import db
 
 router = APIRouter()
@@ -19,12 +19,13 @@ def get_loans(user_id: str):
 def add_active_loan(user_id: str, payload: dict):
     payload["created_at"] = datetime.utcnow()
 
-    sudah = payload.get("cicilanSudahBayar", 0)
+    sudah = payload.get("cicilanSudahDibayar", 0)
     total = payload.get("cicilanTotalBulan", 0)
     payload["is_active"] = sudah < total
 
     ref = db.collection("users").document(user_id).collection("loans")
     doc = ref.document()
+    payload["id"] = doc.id  # ✅ simpan doc ID ke dalam field "id"
     doc.set(payload)
     return {"message": "Loan added", "id": doc.id}
 
@@ -49,3 +50,18 @@ def get_active_loans(user_id: str):
     ref = db.collection("users").document(user_id).collection("loans")
     docs = ref.where("is_active", "==", True).stream()
     return [doc.to_dict() for doc in docs]
+
+
+@router.delete("/users/{user_id}/loans/{loan_id}")
+def delete_loan(user_id: str, loan_id: str):
+    doc_ref = (
+        db.collection("users").document(user_id).collection("loans").document(loan_id)
+    )
+
+    print(f"Deleting loan with ID: {loan_id} for user: {user_id}")
+
+    if not doc_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Loan not found")
+
+    doc_ref.delete()
+    return {"message": "Loan deleted"}

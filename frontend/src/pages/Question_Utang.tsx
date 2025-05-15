@@ -1,29 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/firebase';
-import { addUserDebt } from '@/lib/api'; // Pastikan path ini benar
-
-interface UtangItem {
-  id: string;
-  nama: string;
-  cicilanSudahBayar: number; // Changed from cicilanTerbayar: string
-  cicilanTotalBulan: number; // New field for total installment months
-  bunga: number; // Changed from string to number
-  cicilanPerbulan: number;
-}
-
-// Initial state will be an empty array, or one blank item for user guidance
-const initialUtangData: UtangItem[] = [];
-// Or, for a starting blank row:
-// const initialUtangData: UtangItem[] = [
-//   { id: `utang_${Date.now()}`, nama: '', cicilanTerbayar: '', bunga: '', cicilanPerbulan: 0 }
-// ];
+import { addUserDebt, DebtItem } from '@/lib/api'; // Pastikan path ini benar
 
 let utangIdCounter = 0;
 
 const Question_Utang: React.FC = () => {
   const navigate = useNavigate();
-  const [utangItems, setUtangItems] = useState<UtangItem[]>(initialUtangData);
+  const [utangItems, setUtangItems] = useState<DebtItem[]>([]);
   const [totalUtangPerbulan, setTotalUtangPerbulan] = useState<number>(0);
 
   useEffect(() => {
@@ -35,11 +19,11 @@ const Question_Utang: React.FC = () => {
     return `Rp ${value.toLocaleString('id-ID')}`;
   };
 
-  const handleUtangItemChange = (id: string, field: keyof UtangItem, value: string) => {
+  const handleUtangItemChange = (id: string, field: keyof DebtItem, value: string) => {
     setUtangItems((prevItems) =>
       prevItems.map((item) => {
         if (item.id === id) {
-          if (field === 'cicilanPerbulan' || field === 'cicilanSudahBayar' || field === 'cicilanTotalBulan' || field === 'bunga') {
+          if (field === 'cicilanPerbulan' || field === 'cicilanSudahDibayar' || field === 'cicilanTotalBulan' || field === 'bunga') {
             const numericValue = parseFloat(value);
             return { ...item, [field]: isNaN(numericValue) ? 0 : numericValue };
           } else {
@@ -53,10 +37,10 @@ const Question_Utang: React.FC = () => {
 
   const handleAddUtang = () => {
     utangIdCounter++;
-    const newItem: UtangItem = {
+    const newItem: DebtItem = {
       id: `utang_${Date.now()}_${utangIdCounter}`,
-      nama: '',
-      cicilanSudahBayar: 0, // Updated
+      namaUtang: '',
+      cicilanSudahDibayar: 0, // Updated
       cicilanTotalBulan: 0, // Updated
       bunga: 0, // Updated to 0
       cicilanPerbulan: 0,
@@ -78,9 +62,9 @@ const Question_Utang: React.FC = () => {
     try {
       const savePromises = utangItems.map((item) => {
         const debtPayload = {
-          namaUtang: item.nama, // 🟢 gunakan namaUtang sesuai interface
+          namaUtang: item.namaUtang, // 🟢 gunakan namaUtang sesuai interface
           cicilanTotalBulan: item.cicilanTotalBulan,
-          cicilanSudahDibayar: item.cicilanSudahBayar,
+          cicilanSudahDibayar: item.cicilanSudahDibayar,
           bunga: item.bunga,
           cicilanPerbulan: item.cicilanPerbulan,
         };
@@ -113,13 +97,13 @@ const Question_Utang: React.FC = () => {
           {utangItems.length === 0 && <p className="p-4 text-center text-gray-500">No debt data yet. Please add some.</p>}
           {utangItems.map((item, index) => (
             <div key={item.id} className={`grid grid-cols-12 gap-x-2 p-3 items-center text-sm ${index < utangItems.length - 1 ? 'border-b border-gray-300' : ''}`}>
-              <input type="text" value={item.nama} onChange={(e) => handleUtangItemChange(item.id, 'nama', e.target.value)} placeholder="Mortgage, Car, etc." className="col-span-3 p-2 border rounded bg-white" />
+              <input type="text" value={item.namaUtang} onChange={(e) => handleUtangItemChange(item.id, 'namaUtang', e.target.value)} placeholder="Mortgage, Car, etc." className="col-span-3 p-2 border rounded bg-white" />
               {/* Cicilan Terbayar split into two inputs */}
               <div className="col-span-3 flex items-center justify-center space-x-1">
                 <input
                   type="number"
-                  value={item.cicilanSudahBayar || ''}
-                  onChange={(e) => handleUtangItemChange(item.id, 'cicilanSudahBayar', e.target.value)}
+                  value={item.cicilanSudahDibayar || ''}
+                  onChange={(e) => handleUtangItemChange(item.id, 'cicilanSudahDibayar', e.target.value)}
                   placeholder="Paid"
                   className="w-1/2 p-2 border rounded bg-white text-center"
                   min="0"
