@@ -39,12 +39,12 @@ const Question_Asset: React.FC = () => {
   };
 
   const handleHargaJualChange = (assetId: string, index: number, value: string) => {
-    const numericValue = parseInt(value, 10);
+    const numericValue = parseFromRupiah(value);
     setAssets((prevAssets) =>
       prevAssets.map((asset) => {
         if (asset.id === assetId) {
           const newHargaJual = [...asset.hargaJual];
-          newHargaJual[index] = isNaN(numericValue) ? 0 : numericValue;
+          newHargaJual[index] = numericValue;
           return { ...asset, hargaJual: newHargaJual };
         }
         return asset;
@@ -81,7 +81,18 @@ const Question_Asset: React.FC = () => {
   }, [assets]);
 
   const formatCurrency = (value: number): string => {
-    return `Rp ${value.toLocaleString('id-ID')}`;
+    return `Rp ${formatToRupiah(value)}`;
+  };
+
+  // Add these functions before the Question_Asset component
+  const formatToRupiah = (value: number): string => {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const parseFromRupiah = (value: string): number => {
+    // Remove all dots and convert to number
+    const numericValue = parseInt(value.replace(/\./g, ''), 10);
+    return isNaN(numericValue) ? 0 : numericValue;
   };
 
   const handleSaveAssetsAndNext = async () => {
@@ -153,14 +164,16 @@ const Question_Asset: React.FC = () => {
             />
             {asset.hargaJual.map((harga, index) => (
               <div key={index} className="relative mb-2">
-                <input
-                  type="number"
-                  placeholder={`Selling Price of ${asset.displayName} #${index + 1}`}
-                  className="w-full p-2 border border-gray-300 rounded-md bg-white placeholder-gray-500"
-                  value={harga || ''}
-                  onChange={(e) => handleHargaJualChange(asset.id, index, e.target.value)}
-                  min="0"
-                />
+                <div className="flex items-center">
+                  <span className="absolute left-3 text-gray-500">Rp</span>
+                  <input
+                    type="text"
+                    placeholder={`Selling Price of ${asset.displayName} #${index + 1}`}
+                    className="w-full p-2 pl-10 border border-gray-300 rounded-md bg-white placeholder-gray-500"
+                    value={formatToRupiah(harga)}
+                    onChange={(e) => handleHargaJualChange(asset.id, index, e.target.value)}
+                  />
+                </div>
               </div>
             ))}
           </div>

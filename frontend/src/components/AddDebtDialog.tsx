@@ -150,7 +150,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
           <div className="space-y-4">
             <div>
               <label htmlFor="namaUtang" className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Utang
+                Debt Name
               </label>
               <input
                 type="text"
@@ -160,7 +160,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
                 value={namaUtang}
                 onChange={(e) => setNamaUtang(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Contoh: KPR Rumah, Pinjol XYZ"
+                placeholder="e.g. Mortgage, XYZ Loan"
                 disabled={isLoading || processingAction !== null}
               />
             </div>
@@ -185,7 +185,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
               </div>
               <div>
                 <label htmlFor="cicilanSudahDibayar" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cicilan Sudah Dibayar (Bulan)
+                  Installments Paid (Months)
                 </label>
                 <input
                   type="number"
@@ -196,7 +196,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
                   onChange={(e) => setCicilanSudahDibayar(e.target.value)}
                   min="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Contoh: 12"
+                  placeholder="e.g. 12"
                   disabled={isLoading || processingAction !== null}
                 />
               </div>
@@ -205,7 +205,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="bunga" className="block text-sm font-medium text-gray-700 mb-1">
-                  Bunga (%)
+                  Interest Rate (%)
                 </label>
                 <input
                   type="number"
@@ -216,13 +216,13 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
                   onChange={(e) => setBunga(e.target.value)}
                   min="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Contoh: 5.5"
+                  placeholder="e.g. 5.5"
                   disabled={isLoading || processingAction !== null}
                 />
               </div>
               <div>
                 <label htmlFor="jumlahCicilanPerbulan" className="block text-sm font-medium text-gray-700 mb-1">
-                  Jumlah Cicilan Perbulan (Rp)
+                  'Monthly Installment Amount (Rp)'
                 </label>
                 <input
                   type="number"
@@ -233,7 +233,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
                   onChange={(e) => setJumlahCicilanPerbulan(e.target.value)}
                   min="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Contoh: 1200000"
+                  placeholder="e.g. 1200000"
                   disabled={isLoading || processingAction !== null}
                 />
               </div>
@@ -241,7 +241,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
 
             <div>
               <label htmlFor="tanggalMulaiCicilan" className="block text-sm font-medium text-gray-700 mb-1">
-                Tanggal Mulai Cicilan
+                Installment Start Date
               </label>
               <input
                 type="date"
