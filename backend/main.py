@@ -24,7 +24,8 @@ app = FastAPI(
 # For production, be more restrictive.
 origins = [
     "http://localhost:8080",  # Your frontend's origin (if it's 8080)
-    "http://localhost:5173",  # Common Vite default port, add if you use it
+    "http://localhost:5173",
+    "https://debtwatchfull.netlify.app",  # Common Vite default port, add if you use it
     # Add any other origins you need to allow (e.g., your deployed frontend URL)
 ]
 

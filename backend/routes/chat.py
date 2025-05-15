@@ -109,32 +109,32 @@ def build_user_profile_summary(user_id: str) -> str:
     )
 
     summary = f"""
-    Profil Pengguna:
+    User Profile:
     - Profile: {profile}
 
-    Aset:
+    Assets:
     {chr(10).join([
-        f"- {a.get('name', 'Tidak diketahui')}: Rp{a.get('value', 0)}"
+        f"- {a.get('name', 'Unknown')}: Rp{a.get('value', 0)}"
         for a in assets
-    ]) or 'Tidak ada aset.'}
+    ]) or 'No assets.'}
 
-    Riwayat Transaksi Terakhir:
+    Recent Transaction History:
     {chr(10).join([
-        f"- {t.get('type', 'unknown')}: Rp{t.get('amount', 0)} untuk {t.get('category', 'tidak diketahui')}"
+        f"- {t.get('type', 'unknown')}: Rp{t.get('amount', 0)} for {t.get('category', 'unknown')}"
         for t in transactions
-    ]) or 'Tidak ada transaksi.'}
+    ]) or 'No transactions.'}
 
-    Utang Aktif:
+    Active Loans:
     {chr(10).join([
-        f"- {l.get('loan_type', 'unknown')}: Cicilan Rp{l.get('cicilanPerbulan', 0)} selama {l.get('cicilanTotalBulan', 0)} bulan (sisa {l.get('cicilanTotalBulan', 0) - l.get('cicilanSudahDibayar', 0)} bulan)"
+        f"- {l.get('loan_type', 'unknown')}: Installment Rp{l.get('cicilanPerbulan', 0)} for {l.get('cicilanTotalBulan', 0)} months (remaining {l.get('cicilanTotalBulan', 0) - l.get('cicilanSudahDibayar', 0)} months)"
         for l in loans
-    ]) or 'Tidak ada utang aktif.'}
+    ]) or 'No active loans.'}
 
-    Ringkasan Keuangan:
-    - Total Pemasukan: Rp{income}
-    - Total Pengeluaran: Rp{expense}
-    - Total Cicilan per Bulan: Rp{total_cicilan_perbulan}
-    - Total Utang Sisa: Rp{total_utang}
+    Financial Summary:
+    - Total Income: Rp{income}
+    - Total Expenses: Rp{expense}
+    - Total Monthly Installments: Rp{total_cicilan_perbulan}
+    - Total Remaining Debt: Rp{total_utang}
     """
 
     return summary.strip()

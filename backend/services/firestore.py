@@ -1,12 +1,17 @@
+import json
 import os
 
-import firebase_admin
-from dotenv import load_dotenv
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, initialize_app
 
-load_dotenv()
+# Ambil isi JSON langsung dari environment variable
+firebase_cred_json = os.environ.get("FIREBASE_CREDENTIALS")
 
-cred = credentials.Certificate(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+if not firebase_cred_json:
+    raise RuntimeError("FIREBASE_CREDENTIALS environment variable not set.")
 
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Convert string JSON ke dict
+cred_dict = json.loads(firebase_cred_json)
+cred = credentials.Certificate(cred_dict)
+
+# Inisialisasi Firebase
+initialize_app(cred)
