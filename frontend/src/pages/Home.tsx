@@ -174,7 +174,7 @@ export default function Dashboard() {
     const fetchRiskScore = async () => {
       if (!userId) return;
       try {
-        const response = await fetch(`https://debtwatchfull.netlify.app/users/${userId}/risk_scores/generate`, {
+        const response = await fetch(`https://debtwatch-full-production.up.railway.app/users/${userId}/risk_scores/generate`, {
           method: 'POST',
         });
         if (!response.ok) throw new Error('Gagal mengambil data risiko keuangan');

@@ -140,7 +140,7 @@ const AddDebtDialog: React.FC<AddDebtDialogProps> = ({ isOpen, onClose, onAddDeb
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">{isEditMode ? 'Edit Utang' : 'Tambah Utang Baru'}</h2>
+          <h2 className="text-xl font-semibold text-gray-800">{isEditMode ? 'Edit Debt' : 'Add New Debt'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl" aria-label="Close dialog" disabled={isLoading || processingAction !== null}>
             &times;
           </button>
