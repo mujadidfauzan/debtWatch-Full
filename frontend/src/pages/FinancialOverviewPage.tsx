@@ -197,7 +197,7 @@ const FinancialOverviewPage: React.FC = () => {
               {financialSummary.expensePercentage}%
             </div>
           </div>
-          <p className="text-right text-xs md:text-xl mt-1 text-white/80">Sisa: Rp {formatCurrency(financialSummary.balance)}</p>
+          <p className="text-right text-xs md:text-xl mt-1 text-white/80">Remaining: Rp {formatCurrency(financialSummary.balance)}</p>
         </div>
       </div>
 

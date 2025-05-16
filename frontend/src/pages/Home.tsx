@@ -252,25 +252,57 @@ export default function Dashboard() {
           </div>
 
           {/* Financial Status & Debt Amount */}
-          <div className="flex justify-between items-end mb-4">
+          {/* Financial Status & Debt Amount */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-6">
             {/* Financial Status */}
-            <div>
-              <p className="text-xs md:text-xl text-white/90">Financial Status</p>
+            <div className="w-full sm:w-1/2">
+              <p className="text-sm md:text-xl text-white/90 tracking-wide mb-2">💼 Financial Status</p>
 
               {riskLevel ? (
-                <div className="flex items-center space-x-2">
-                  {riskLevel === 'High' && <span className="text-red-500 text-xl animate-pulse">⚠️</span>}
-                  <p className={`text-3xl font-bold ${riskLevel === 'High' ? 'text-red-500' : riskLevel === 'Medium' ? 'text-yellow-300' : 'text-green-400'}`}>Risk: {riskLevel}</p>
+                <div className="flex items-center space-x-3 transition-all duration-300 mb-2">
+                  {riskLevel === 'High' && (
+                    <span className="text-red-500 text-2xl animate-pulse" role="img" aria-label="High Risk Warning">
+                      ⚠️
+                    </span>
+                  )}
+                  {riskLevel === 'Medium' && (
+                    <span className="text-yellow-300 text-2xl animate-pulse" role="img" aria-label="Medium Risk Warning">
+                      ⚠️
+                    </span>
+                  )}
+                  {riskLevel === 'Low' && (
+                    <span className="text-green-400 text-2xl" role="img" aria-label="Low Risk">
+                      ✅
+                    </span>
+                  )}
+                  <p
+                    className={`text-2xl sm:text-3xl font-extrabold transition-colors duration-300
+          ${riskLevel === 'High' ? 'text-red-500' : riskLevel === 'Medium' ? 'text-yellow-300' : 'text-green-400'}`}
+                  >
+                    Risk: {riskLevel}
+                  </p>
                 </div>
               ) : (
-                <p className="text-3xl font-bold text-gray-300">Calculating...</p>
+                <p className="text-2xl sm:text-3xl font-semibold text-gray-300 animate-pulse">Calculating...</p>
+              )}
+
+              {/* Dynamic Status Bar */}
+              {riskLevel && (
+                <div className="bg-white/10 rounded-lg overflow-hidden h-3 w-full">
+                  <div
+                    className={`
+          h-full transition-all duration-500
+          ${riskLevel === 'High' ? 'bg-red-500 w-5/6' : riskLevel === 'Medium' ? 'bg-yellow-300 w-2/3' : 'bg-green-400 w-1/3'}
+        `}
+                  />
+                </div>
               )}
             </div>
 
             {/* Total Debt */}
-            <div className="text-right">
-              <p className="text-xs md:text-xl text-white/90">Total Debt</p>
-              <p className="text-2xl font-bold text-yellow-300">Rp {sisaUtang.toLocaleString('id-ID')}</p>
+            <div className="w-full sm:w-1/2 text-left sm:text-right">
+              <p className="text-sm md:text-xl text-white/90 mb-2">💳 Total Debt</p>
+              <p className="text-2xl sm:text-3xl font-bold text-yellow-300">Rp {sisaUtang.toLocaleString('id-ID')}</p>
             </div>
           </div>
 
@@ -302,39 +334,50 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            <div className="bg-yellow-50 rounded-lg pb-1">
-              <div className="grid grid-cols-5 gap-px text-center text-xs md:text-xl font-semibold">
-                <div className="bg-yellow-300 p-2.5 rounded-tl-lg text-gray-700">Debt Name</div>
-                <div className="bg-yellow-300 p-2.5 text-gray-700">Paid Installments</div>
-                <div className="bg-yellow-300 p-2.5 text-gray-700">Interest</div>
-                <div className="bg-yellow-300 p-2.5 text-gray-700">Monthly Payment</div>
-                <div className="bg-yellow-300 p-2.5 rounded-tr-lg text-gray-700">Action</div>
-              </div>
-              <div className="grid grid-cols-5 gap-px text-center text-xs md:text-xl text-gray-700 bg-yellow-200 rounded-b-lg overflow-hidden">
+            {/* Table */}
+            <div className="bg-yellow-50 rounded-lg overflow-x-auto">
+              <div className="min-w-[600px]">
+                {/* Table Header */}
+                <div className="grid grid-cols-5 gap-px text-center text-xs md:text-sm font-semibold bg-yellow-300 text-gray-700 rounded-t-lg">
+                  <div className="p-3">Debt Name</div>
+                  <div className="p-3">Paid Installments</div>
+                  <div className="p-3">Interest</div>
+                  <div className="p-3">Monthly Payment</div>
+                  <div className="p-3">Action</div>
+                </div>
+
+                {/* Table Body */}
                 {debts.length > 0 ? (
-                  debts.map((debt, index) => (
-                    <React.Fragment key={debt.id}>
-                      <div className={`p-2.5 ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.namaUtang}</div>
-                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>
-                        {debt.cicilanSudahDibayar}/{debt.cicilanTotalBulan}
-                      </div>
-                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{typeof debt.bunga === 'number' ? `${debt.bunga}%` : `${debt.bunga}%`}</div>
-                      <div className={`p-2.5 tabular-nums ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>{debt.cicilanPerbulan.toLocaleString('id-ID')}</div>
-                      <div className={`p-2.5 flex items-center justify-center ${index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100'}`}>
-                        <button onClick={() => openEditDebtDialog(debt)} className="text-xs md:text-xl bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md">
-                          Edit
-                        </button>
-                      </div>
-                    </React.Fragment>
-                  ))
+                  <div className="grid grid-cols-5 gap-px text-center text-xs md:text-sm text-gray-700 bg-yellow-200 rounded-b-lg">
+                    {debts.map((debt, index) => {
+                      const bgColor = index % 2 === 0 ? 'bg-yellow-50' : 'bg-yellow-100';
+                      return (
+                        <React.Fragment key={debt.id}>
+                          <div className={`p-3 ${bgColor}`}>{debt.namaUtang}</div>
+                          <div className={`p-3 tabular-nums ${bgColor}`}>
+                            {debt.cicilanSudahDibayar}/{debt.cicilanTotalBulan}
+                          </div>
+                          <div className={`p-3 tabular-nums ${bgColor}`}>{typeof debt.bunga === 'number' ? `${debt.bunga}%` : debt.bunga}</div>
+                          <div className={`p-3 tabular-nums ${bgColor}`}>Rp {debt.cicilanPerbulan.toLocaleString('id-ID')}</div>
+                          <div className={`p-3 flex items-center justify-center ${bgColor}`}>
+                            <button onClick={() => openEditDebtDialog(debt)} className="text-xs md:text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md transition-colors duration-200">
+                              Edit
+                            </button>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="col-span-5 p-4 text-center text-gray-500 bg-yellow-50">No debt data yet.</div>
                 )}
               </div>
             </div>
-            <div className="flex justify-between items-center bg-blue-600 text-white p-2.5 rounded-lg mt-2 font-semibold text-sm md:text-xl">
-              <p>Total Debt</p>
-              <p className="tabular-nums">Rp. {totalUtangPerbulan.toLocaleString('id-ID')}</p>
+
+            {/* Total Summary */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-600 text-white p-3 rounded-lg mt-3 font-semibold text-sm md:text-base gap-2">
+              <p>Total Monthly Debt</p>
+              <p className="tabular-nums text-right">Rp {totalUtangPerbulan.toLocaleString('id-ID')}</p>
             </div>
           </div>
 

@@ -186,9 +186,7 @@ const Question_Utang = () => {
                     <div>
                       <label className="block text-sm text-gray-600 mb-1">Monthly Payment</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
-                          Rp
-                        </span>
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">Rp</span>
                         <input
                           type="text"
                           value={formatToRupiah(item.cicilanPerbulan || 0)}
@@ -227,13 +225,12 @@ const Question_Utang = () => {
                 <span className="font-bold text-2xl text-yellow-300">{formatCurrency(totalUtangPerbulan)}</span>
               </div>
             </div>
-
-            <button onClick={handleSaveAndNext} className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-3 px-6 rounded-lg text-lg w-full flex items-center justify-center">
-              Continue
-              <ChevronRight size={20} className="ml-1" />
-            </button>
           </>
         )}
+        <button onClick={handleSaveAndNext} className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-3 px-6 rounded-lg text-lg w-full flex items-center justify-center">
+          Continue
+          <ChevronRight size={20} className="ml-1" />
+        </button>
       </div>
     </div>
   );

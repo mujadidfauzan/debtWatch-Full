@@ -1,14 +1,14 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react"; // ikon animasi loading
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react'; // ikon animasi loading
 
 const Load: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/home");
+      navigate('/home');
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -26,10 +26,10 @@ const Load: React.FC = () => {
         }}
         transition={{
           duration: 2.5,
-          ease: "easeInOut",
+          ease: 'easeInOut',
         }}
       >
-        Aplikasi Sedang Disiapkan
+        Preparing the application...
       </motion.h1>
 
       {/* Ikon loading berputar */}
@@ -38,7 +38,7 @@ const Load: React.FC = () => {
         transition={{
           repeat: Infinity,
           duration: 1,
-          ease: "linear",
+          ease: 'linear',
         }}
       >
         <Loader2 className="w-10 h-10 text-white animate-spin" />
