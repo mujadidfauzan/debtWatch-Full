@@ -640,12 +640,15 @@ const ChatbotPage: React.FC = () => {
               />
 
               <button
-                className={`flex items-center justify-center h-8 px-3 mr-2 rounded-full transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-blue-300' : 'bg-gray-100 hover:bg-gray-200 text-app-blue'}`}
+                className={`flex items-center justify-center h-8 px-2 sm:px-3 mr-2 rounded-full transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-blue-300' : 'bg-gray-100 hover:bg-gray-200 text-app-blue'}`}
                 onClick={() => setShowEstimateForm(true)}
                 disabled={isSending}
               >
-                <span className="mr-1 hidden sm:inline">$</span>
-                <span className="text-xs md:text-base">Estimate Debt</span>
+                <span className="text-xs md:text-base whitespace-nowrap">
+                  <span className="sm:hidden">$ Est.</span>
+                  <span className="hidden sm:inline md:hidden">Estimate</span>
+                  <span className="hidden md:inline">Estimate Debt</span>
+                </span>
               </button>
 
               <button

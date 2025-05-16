@@ -76,8 +76,22 @@ export const updateUserProfile = async (userId: string, userData: Partial<UserPr
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Network response was not ok' }));
-    throw new Error(errorData.detail || 'Failed to update user profile');
+    let errorDetail = 'Failed to update user profile';
+    try {
+      // Try to get more specific error from response body
+      const errorData = await response.json();
+      errorDetail = errorData.detail || JSON.stringify(errorData);
+    } catch (e) {
+      // If parsing JSON fails, use the response text
+      try {
+        const textResponse = await response.text();
+        errorDetail = `Server responded with status ${response.status}: ${textResponse || 'No additional error message provided.'}`;
+      } catch (textErr) {
+        errorDetail = `Server responded with status ${response.status}, but failed to get response text.`;
+      }
+    }
+    console.error('Error in updateUserProfile:', response.status, response.statusText, errorDetail);
+    throw new Error(errorDetail);
   }
 
   return response.json();

@@ -27,7 +27,7 @@ const AuthPage: React.FC = () => {
       <div className="relative z-10 w-full max-w-xs flex flex-col items-center p-4 pb-12">
         <h1 className="text-4xl font-bold text-blue-700 mb-2">DebtWatch</h1>
         <p className="text-sm text-gray-600 text-center mb-8">
-          Pantau risiko, raih stabilitas finansial Anda.
+          Monitor risks, achieve your financial stability
         </p>
 
         <div className="w-full space-y-4">
@@ -45,13 +45,6 @@ const AuthPage: React.FC = () => {
             Sign Up
           </Button>
         </div>
-
-        <button
-          className="mt-6 text-sm text-gray-500 hover:text-gray-700"
-          onClick={() => navigate('/forgot-password')}
-        >
-          Forgot Password?
-        </button>
       </div>
     </div>
   );
